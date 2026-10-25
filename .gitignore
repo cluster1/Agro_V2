@@ -3,9 +3,10 @@
 # GLOBAL
 # ============================================================
 
-MyAsset/
+MyAssets/
 app-docs/
 upload/
+*workspace
 *.md
 
 # Node modules
