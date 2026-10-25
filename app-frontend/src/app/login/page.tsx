@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PageTitle } from '@/components/ui/page-title'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Eye, EyeOff, Leaf, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -35,20 +34,56 @@ export default function LoginPage() {
   const productCode = process.env.NEXT_PUBLIC_PRODUCT_CODE
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-primary/10 to-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-              <Leaf className="h-8 w-8 text-primary-foreground" aria-hidden="true" />
+    <main className="grid min-h-dvh lg:grid-cols-2">
+      {/* Panel kiri: foto sawah + pesan produk */}
+      <section className="relative h-64 overflow-hidden bg-neutral-900 sm:h-72 lg:h-auto">
+        <Image
+          src="/images/bg-sawah.jpg"
+          alt=""
+          fill
+          priority
+          quality={75}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-cover"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/20"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-x-0 bottom-0 space-y-2 p-6 lg:space-y-4 lg:p-12">
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-5xl">
+            Smart Monitoring &amp; Precision Farming
+          </h1>
+          <p className="text-base font-medium text-white sm:text-lg lg:text-xl">
+            Platform Digital Twin &amp; Telemetri Pertanian Cerdas
+          </p>
+          <p className="hidden max-w-xl text-sm leading-relaxed text-white/90 sm:block lg:text-base">
+            Pantau kondisi hara tanah secara real-time, dapatkan rekomendasi agronomik berbasis AI,
+            dan tingkatkan efisiensi hasil panen secara berkelanjutan.
+          </p>
+        </div>
+      </section>
+
+      {/* Panel kanan: form login */}
+      <div className="flex items-center justify-center bg-background p-6 sm:p-10">
+        <div className="w-full max-w-sm space-y-6 motion-safe:animate-fade-in">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
+                <Leaf className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
+              </div>
+              {productCode && (
+                <span className="text-sm font-semibold text-foreground">{productCode}</span>
+              )}
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold tracking-tight text-primary">Masuk</h2>
+              <p className="text-sm text-muted-foreground">
+                Masukkan email dan password untuk masuk
+              </p>
             </div>
           </div>
-          <PageTitle className="text-2xl md:text-2xl">{productCode}</PageTitle>
-          <CardDescription>
-            Masukkan email dan password untuk masuk
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+
           <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -110,8 +145,8 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   )
 }
