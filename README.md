@@ -25,7 +25,7 @@ Fitur utama:
 |---|---|
 | `app-backend/` | REST API (NestJS), migrasi SQL di `migrations/`, seed di `scripts/` |
 | `app-frontend/` | Antarmuka web (Next.js) |
-| `app-docs/` | Dokumentasi tambahan (instalasi, API, tutorial, catatan fitur) |
+
 
 ## Tech Stack
 
@@ -40,7 +40,7 @@ Fitur utama:
 
 ## Prasyarat
 
-- Node.js 18 atau lebih baru (disarankan 20 LTS) dan npm
+- Node.js 18 atau lebih baru (disarankan 24 LTS) dan npm
 - MySQL 8 atau MariaDB 10.4+
 
 ## Instalasi Backend
@@ -50,7 +50,7 @@ cd app-backend
 npm install
 ```
 
-1. **Siapkan database**
+1. **Siapkan database (jika belum ada) **
    ```bash
    mysql -u root -p -e "CREATE DATABASE agro_db CHARACTER SET utf8mb4;"
    mysql -u root -p agro_db < ../MyAssets/agro_db.txt
@@ -133,6 +133,4 @@ Catatan:
 | Backend menolak start di production | Ganti `JWT_SECRET`, `JWT_REFRESH_SECRET`, dan isi `CORS_ORIGIN` |
 | `next build` menolak API URL | Gunakan `https://` atau periksa `.env.local` yang menimpa `.env.production` |
 
-## Dokumentasi Lanjutan
-
-Lihat folder [app-docs](app-docs/): [INSTALL.md](app-docs/INSTALL.md), [SETUP.md](app-docs/SETUP.md), [API.md](app-docs/API.md), [TUTORIAL.md](app-docs/TUTORIAL.md).
+ 
