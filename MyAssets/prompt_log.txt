@@ -1,0 +1,443 @@
+Ubah tampilan untuk menampilkan detail dari Device. modelnya spt ini : 
+┌────────────────────┐┌─────────────────────────────────────────┐
+│device              ││ Sensor 1              [Parameter] [Data]│ 
+│     <detail device>││ Sensor 2 	      [Parameter] [Data]│
+│                    ││ Sensor 3              [Parameter] [Data]│ 
+│                    ││   <detail sensor 3>   [Parameter] [Data]│
+└────────────────────┘└─────────────────────────────────────────┘
+Detail device, berisi seluruh keterangan tentang device. 
+Detail sensor , berisi keterangan tentang sensor, dan modelnya collapsed
+
+
+Tambahkan fungsi dan button UPDATE untuk mengupdate device, buatkan form modals untuk update device.
+Pada tabel sensor, sy sudah menghapus field sens_address, jadi pada form dan display, hilangkan field sens_address.
+Tambahkan button [Add Sensor] pada bagian sensor , sejajar dengan title SENSOR. 
+Tambahkan pula fungsi update sensor, untuk posisi button / link sesuaikan dengan layout.
+
+┌─────────────────────────────────────────────────────────┐
+│ ← Device Detail              [Update Device Button]     │
+├─────────────────────────────────────────────────────────┤
+│ ┌─────────────┐  ┌──────────────────────────────────┐  │
+│ │   Device    │  │ Sensors (3)    [Add Sensor Btn]  │  │
+│ │   Details   │  │ ┌──────────────────────────────┐ │  │
+│ │             │  │ │ Sensor 1    [Edit] [Chevron] │ │  │
+│ │  - ID       │  │ │   └─ Details (collapsed)     │ │  │
+│ │  - Status   │  │ └──────────────────────────────┘ │  │
+│ │  - Location │  │ ┌──────────────────────────────┐ │  │
+│ │  - Network  │  │ │ Sensor 2    [Edit] [Chevron] │ │  │
+│ │  - Coords   │  │ │   ├─ Sensor Details          │ │  │
+│ │             │  │ │   └─ Parameters (expanded)   │ │  │
+│ └─────────────┘  │ └──────────────────────────────┘ │  │
+│                  └──────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+
+Untuk form ADD Sensor & Update Sensor, yang ditampilkan hanya untuk update tabel sensor saja. 
+Untuk parameter buatkan form terpisah dengan button terpisah juga.
+pada Modul Device, hilangkan button SENSOR.
+
+Pada Form Add Sensor, tambahkan kolom Sequence, diambil dari field sens_seq, untuk urutan default 0. Untuk mengurutkan pada tampilan daftar sensor, diurut berdasarkan sens_seq.  
+Pada form add sensor,  field Sensor ID, dapat di entry manual, tidak perlu otomatis menggunakan UUID. 
+
+Yang ditampilkan pada list parameter , seluruh data yang ada di tabel td_device_sensor, kecuali ds_seq.
+Pada form update Parameter, field sequence dan status, dipindah ke akhir form. 
+Tambahkan fungsi update device pada card DEVICE, buatkan form untuk update device. 
+
+Pada form create / update Parameter, Tambahkan field unit dengan field unit_id di td_device_sensor, unit_id ini berelasi dengan tm_unit. 
+
+Pada bagian parameter, yang ditampilkan : 
+Address :40001
+Normal Value :25
+Min Value : 0     
+Max Value : 100
+Min Normal :20    
+Max Normal :30 
+Min Warning :15   
+Max Warning : 100
+Model tampilan bisa disesuaikan dengan ukuran form yang ada 
+ 
+Ganti menu label Devices dengan Devices & Sensor.
+Ganti label meu Sites dengan Sites & Cluster
+
+perbaiki pada tampilan detail Parameter seperti model dibawah ini : 
+┌────────────────────┐┌──────────────────────────────────────────────────────────────┐
+│device              ││ Sensor 1                                        [Parameter]  │ 
+│     <detail device>││    <detail sensor 1>                                         │
+│                    ││  Parameter [2]                               [Add Parameter] │ 
+│                    ││   env_temp            Address :4001         Normal Val. : 23 │
+│                    ││   Min. Value : 0      max. value : 10      UNIT : *C         │
+│                    ││   Min. Normal : 0     max. normal : 10                       │
+│                    ││   Min. warning : 0    max. Warning : 10                      │
+└────────────────────┘└──────────────────────────────────────────────────────────────┘
+
+
+
+Pada Modul sites, ganti button [cluster] dengan [View Detail].
+
+Ubah layout detail sites dengan model seperti dibawah ini : 
+┌────────────────────────────────────────────────────────┐
+│ ← Site Detail              [Update Site Button]        │
+├────────────────────────────────────────────────────────┤
+│ ┌─────────────┐  ┌──────────────────────────────────┐  │
+│ │   Sites     │  │ Cluster 1          [edit cluster]│  │
+│ │   Details   │  │ ┌──────────────────────────────┐ │  │
+│ │             │  │ │ Cluster 2   [Edit] [Chevron] │ │  │
+│ │  - ID       │  │ │   └─ Details (collapsed)     │ │  │
+│ │  - Status   │  │ └──────────────────────────────┘ │  │
+│ │  - Location │  │ ┌──────────────────────────────┐ │  │
+│ │             │  │ │ cluster 2    [Edit] [Chevron]│ │  │
+│ │             │  │ │   ├─ cluster Details         │ │  │
+│ │             │  │ │                              │ │  │
+│ └─────────────┘  │ └──────────────────────────────┘ │  │
+│                  └──────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
+
+Pada menu Sites & Cluster, hilangkan button update, dan ganti title view detail dengan View Cluster. 
+Hapus menu clusters, dan hapus seluruh modul yang tidak terpakai. 
+
+Tambahkan constrain di menu Users berdasarkan user_role, 
+Jika admin= tampilkan semua user, 
+jika tenant_admin = tampilkan user yang ada hubungan dengan tenant_id 
+selain admin & tenant_admin, tampilkan user itu sendiri. 
+
+Gunakan model yang sama utk tabel : 
+- tm_cluster , cluster_id = site_id + CLS<no_urut>
+- tm_device, device_id = cluster_id + DEV<no_urut>
+- td_sensor, sens_id = device_id + SENS<no_urut>
+
+Setiap view data dari tm_cluster, tm_device, td_sensor, td_device sensor
+selalu memasukan parameter kondisi sesuai dengan primary key dan foreign key
+Jadi, walaupun ada kemungkinan ada field key yg sama, tidak akan ada duplikasi ketika menampilkan data. 
+
+Tambahkan menu Monitoring, dibawah menu Device & Sensor, tambahkan icon chart. 
+Menu ini akan menampilkan data dari setiap parameter sensor. Ditampilkan berdasarkan device, sensor dan nanti tampilkan nilai setiap parameter
+
+Contoh layout : 
+
+ MONITORING 
+ 
+ FILTER : [SITE]V [CLUSTER]V
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Device name 1                                                   Dev_location | Number sensor : 3 │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ SENSOR                                                                                           │
+│ ┌───────────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐    │
+│ │ Sensor Temperature            │ │ Soil Sensor 1             │ │ Soil Sensor 2             │    │
+│ │ - Temp. Envirotment : 23'C    │ │ - Temp. Soil  : 23'C      │ │ - Temp. Soil  : 23'C      │    │
+│ │ - Hum. Envirotment  : 50 %    │ │ - Hum. Soil  : 50 %       │ │ - Hum. Soil  : 50 %       │    │
+│ │ update : 01/01/2025           │ │ - Nitrogen : 300 ppm      │ │ - Nitrogen : 300 ppm      │    │
+│ └───────────────────────────────┘ │ - Phospat  : 200          │ │ - Phospat  : 200          │    │
+│                                   │ update : 01/01/2025       │ │ update : 01/01/2025       │    │ 
+│                                   └───────────────────────────┘ └───────────────────────────┘    │
+│ HISTORY (Last 24 hour)                                                                           │
+│┌───────────────────────────────────────────────────────────────────────────────────────────────┐ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││         Line Chart Multiple Axis                                                              │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+│└───────────────────────────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+ Nilai realtime  sensor didapat dari tabel tm_sensor_read_update field read_value read_update_value , tgl update read_update_date
+ untuk history didapat dari tabel tm_sensor_read
+ 
+ Ok, sudah ditampilkan. Tinggal membuat line Chart di bagian History, 
+ Dengan model multiple axis sebab skala setiap parameter bisa saja berbeda. 
+ 
+ Untuk line chart pada modul monitoring, buat model multiple axis untuk sumbu Y. sehingga setiap parameter akan mempunyai skala yang berbeda
+ Nilai skala minimal didapat dari td_device_sensor.ds_min_value untuk nilai maksimal td_device_sensor.ds_max_value
+ untuk symbol satuan tr_unit.unit_symbol 
+ SQL untuk mendapatkan nilai minimal dan maksimal serta symbol satuan : 
+ 
+ SELECT td_device_sensor.ds_id,td_device_sensor.ds_name,td_device_sensor.ds_min_value,td_device_sensor.ds_max_value,tr_unit.unit_name,tr_unit.unit_symbol
+ FROM td_device_sensor 
+ LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id 
+ WHERE td_device_sensor.dev_id = "TENANT22_SITE1_CLS1_DEV1"
+ 
+Pada  bagian dashboard, pada bagian Aktivitas Terbaru, tampilkan yang berisi data dengan header  Device , Sensor, Date , Value+symbol. data yang diambil 10 terakhir 
+Untuk mengambi 10 data terakhir SQL : 
+"select tm_device.dev_name, td_device_sensor.ds_name  , DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") as read_date, tm_sensor_read.read_value,tr_unit.unit_symbol
+from tm_sensor_read
+left join tm_device on tm_device.dev_id = tm_sensor_read.dev_id
+left join td_device_sensor on td_device_sensor.ds_id = tm_sensor_read.ds_id and tm_sensor_read.dev_id = td_device_sensor.dev_id
+left join tr_unit on tr_unit.unit_id = td_device_sensor.unit_id
+where tm_sensor_read.tenant_id = "TENANT22"
+order by read_date desc
+limit 0,10 "
+
+Pada menu Dashboard bagian SITES, tambahkan PETA yang menunjukan titik sites 
+data sites diambil dari tabel tm_site. Peta menggunakan open maps server dengan leaflet js untuk librarynya. 
+Site yang ditampilkan berdasarkan user yang login. 
+
+Jika user yang akitif login adalah ADMIN / Super Admin / system / Global Admin Organization, Tampilkan peta seluruh site 
+
+Ubah layout pada bagian di Menu Monitoring menjadi seperti ini : 
+- Today  & History dalam bentuk TAB seperti dibawah ini : 
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Device name 1                                                   Dev_location | Number sensor : 3 │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Today  | History |                                                                               │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Monday, 01 Januari 2025                                                                           │
+│ ┌───────────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐    │
+│ │ Sensor Temperature            │ │ Soil Sensor 1             │ │ Soil Sensor 2             │    │
+│ │ - Temp. Envirotment : 23'C    │ │ - Temp. Soil  : 23'C      │ │ - Temp. Soil  : 23'C      │    │
+│ │ - Hum. Envirotment  : 50 %    │ │ - Hum. Soil  : 50 %       │ │ - Hum. Soil  : 50 %       │    │
+│ │ update : 01/01/2025           │ │ - Nitrogen : 300 ppm      │ │ - Nitrogen : 300 ppm      │    │
+│ └───────────────────────────────┘ │ - Phospat  : 200          │ │ - Phospat  : 200          │    │
+│                                   │ update : 01/01/2025       │ │ update : 01/01/2025       │    │ 
+│                                   └───────────────────────────┘ └───────────────────────────┘    │
+│ Alert (Last 24 hour)                                                                             │
+│┌───────────────────────────────────────────────────────────────────────────────────────────────┐ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+│└───────────────────────────────────────────────────────────────────────────────────────────────┘ │
+│ Last Data                                                                                        │
+│┌───────────────────────────────────────────────────────────────────────────────────────────────┐ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+││                                                                                               │ │
+│└───────────────────────────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+- Pada Tab Today terdapat card Sensor , Last Data dan Alert. 
+- Tambahkan card LAST DATA dan ALERT dalam bentuk timeline pada TAB Today  
+- Pada bagian Last Data tampilkan yang berisi data dengan header  Device , Sensor, Date , Value+symbol. data yang diambil 10 terakhir 
+Untuk mengambi 10 data terakhir SQL : 
+"select tm_device.dev_name, td_device_sensor.ds_name  , DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") as read_date, tm_sensor_read.read_value,tr_unit.unit_symbol
+from tm_sensor_read
+left join tm_device on tm_device.dev_id = tm_sensor_read.dev_id
+left join td_device_sensor on td_device_sensor.ds_id = tm_sensor_read.ds_id and tm_sensor_read.dev_id = td_device_sensor.dev_id
+left join tr_unit on tr_unit.unit_id = td_device_sensor.unit_id
+where tm_sensor_read.tenant_id = "TENANT22"
+order by read_date desc
+limit 0,10 "
+
+- Pada bagian ALERT data Diambil dengab SQL : SELECT tm_alarm.alm_date,tr_alarm_code.alcode_note,tm_device.dev_name, td_device_sensor.ds_name, 
+DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") AS read_date, tm_sensor_read.read_value,tr_unit.unit_symbol 
+FROM tm_alarm
+LEFT JOIN tm_sensor_read ON tm_alarm.read_id = tm_sensor_read.read_id 
+LEFT JOIN tr_alarm_code ON tm_alarm.alcode_id = tr_alarm_code.alcode_id
+LEFT JOIN tm_device ON tm_device.dev_id = tm_sensor_read.dev_id
+LEFT JOIN td_device_sensor ON td_device_sensor.ds_id = tm_sensor_read.ds_id AND tm_sensor_read.dev_id = td_device_sensor.dev_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+
+- Untuk tab History, pindahkan chart yang sudah ada ke bagian tab history ini. 
+
+
+Ubah sususan menu Menjadi :
+  - Dashboard
+  - Monitoring 
+  - Environtment : (submenu/With expandable sections) 
+	- Sites & Cluster
+	- Device & sensor 
+	- Alert 
+	- Media 
+   - Report 
+   - Utility : (submenu/With expandable sections )  
+	- Tenant 
+	- Users 
+Pada bagian monitoring, saya ingin menambahkan Foto yang diambil dari tabel tm_site_media
+Apakah ada saran untuk layout yang terbaik dari sisi UX ? , sebab sudah banyak data yang harus ditampilkan pada page ini. 
+
+Ubah layout seperti ilustrasi dibawah ini : 
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Device name 1                                                   Dev_location | Number sensor : 3 │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Today  | History |                                                                               │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│Monday, 01 Januari 2025                                                                           │
+│ ┌───────────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐    │
+│ │                               │ │ Soil Sensor 1             │ │ Soil Sensor 2             │    │
+│ │  Media Carousel               │ │ - Temp. Soil  : 23'C      │ │ - Temp. Soil  : 23'C      │    │
+│ │                               │ │ - Hum. Soil  : 50 %       │ │ - Hum. Soil  : 50 %       │    │
+│ │                               │ │ - Nitrogen : 300 ppm      │ │ - Nitrogen : 300 ppm      │    │
+│ │                               │ │ - Phospat  : 200          │ │ - Phospat  : 200          │    │
+│ │                               │ │ update : 01/01/2025       │ │ update : 01/01/2025       │    │ 
+│ │                               │ └───────────────────────────┘ └───────────────────────────┘    │
+│ │                               │ ┌───────────────────────────┐ ┌───────────────────────────┐    │
+│ │                               │ │ Soil Sensor 3             │ │ Soil Sensor 3             │    │
+│ │                               │ │ - Temp. Soil  : 23'C      │ │ - Temp. Soil  : 23'C      │    │
+│ │                               │ │ - Hum. Soil  : 50 %       │ │ - Hum. Soil  : 50 %       │    │
+│ │                               │ │ - Nitrogen : 300 ppm      │ │ - Nitrogen : 300 ppm      │    │
+│ └───────────────────────────────┘ │ - Phospat  : 200          │ │ - Phospat  : 200          │    │
+│                                   │ update : 01/01/2025       │ │ update : 01/01/2025       │    │ 
+│                                   └───────────────────────────┘ └───────────────────────────┘    │
+│ Alert (Last 24 hour)                       Last Data                                             │
+│┌─────────────────────────────────────────┐ ┌─────────────────────────────────────────┐           │
+││                                    	   │ │                                         │           │  
+││                                    	   │ │                                         │           │  
+││                                    	   │ │                                         │           │  
+│└────────────────────────────────────────-┘ └────────────────────────────────────────-┘           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Pindahkan statistik Total Sites, TOtal CLusters, TOtal Devices, Total Sensors 
+ke header sebelah LIVE STATUS atau setelah comment : {/* New Stat */} 
+Sesuaikan ui/ux seperti Live Status 
+
+Pada Dashboard, card sites location, tambahkan posisi lokasi Device dan Sensor .
+Lokasi Device, diambil dari tabel tm_device field dev_lat untuk Latitude, field dev_lon untuk Longitude
+Lokasi Sensor, diambil dari tabel td_sensor field sens_lat untuk Latitude , field sens_lon untuk Longitude.
+Buatkan visualisasi bahwa Device seterhubung ke sensor. 
+Titik Device, jika diclick, muncul jumlah sensor yang terhubung ke device tersebut. 
+Titik sensor jika di click, muncul nilai value terakhir yang diambil dari tabel tm_sensor_read_update
+
+
+
+Peta tidak muncul dan masih ada error : Unknow colum sens_id i field list, sepertinya salah mengambil data. 
+
+Berdasarkan ERD yang sudah dibuat, Untuk kebutuhan Sites Location ada 3 kali query yaitu :  
+
+1. Untuk mendapatkan TITIK Koordinat Device SQL : 
+' SELECT dev_id, dev_name, dev_location, dev_lat, dev_lon
+FROM tm_device 
+WHERE tenant_id = "TENANT22" ;
+'
+
+2. Untuk Mendapatkan Titik Kordinat Sensor SQL : 
+SELECT sens_id , dev_id, sens_name, sens_location,sens_lat,sens_lon
+FROM td_sensor 
+WHERE dev_id =  "TENANT22_SITE1_CLS1_DEV1" ;
+
+3. Untuk Mendapatkan Keterangan dari setiap sensor berupa nilai terakhir , SQL : 
+SELECT td_device_sensor.ds_id,td_device_sensor.ds_name,tm_sensor_read_update.read_update_date,tm_sensor_read_update.read_update_value,tr_unit.unit_name,tr_unit.unit_symbol
+FROM td_device_sensor 
+LEFT JOIN tm_sensor_read_update ON tm_sensor_read_update.ds_id = td_device_sensor.ds_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+WHERE td_device_sensor.dev_id  =  "TENANT22_SITE1_CLS1_DEV1" AND tm_sensor_read_update.tenant_id = "TENANT22" 
+
+Jadi, ada 3 Query yang harus dilakukan untuk membuat peta. 
+COba implementasikan untuk menampilkan peta 
+
+Pada timeline Last Data Update, tambahkan timeline dari Alert / Notificatin / Warning. sehingga jadi 1 timeline dengan Last Data Update.  
+Untuk model layout tulisan timeline , dikiri alert/notif / warn, di kanan Data Update. 
+----
+
+Buatkan chart model Gauge untuk menampilkan hasil nilai dari setiap sensor. 
+untuk mendapatkan nilai setiap parameter SQL : 
+SELECT td_sensor.sens_id,td_sensor.sens_name, td_device_sensor.ds_id,td_device_sensor.ds_name,tm_sensor_read_update.read_update_date,tm_sensor_read_update.read_update_value,tr_unit.unit_name,tr_unit.unit_symbol,
+tm_device.dev_id,tm_device.dev_name,tm_device.site_id,tm_device.tenant_id, tm_site.site_name,td_device_sensor.ds_min_value,td_device_sensor.ds_max_value, td_device_sensor.ds_max_norm_value,td_device_sensor.ds_min_norm_value
+FROM td_device_sensor 
+LEFT JOIN td_sensor ON td_sensor.sens_id = td_device_sensor.sens_id
+LEFT JOIN tm_sensor_read_update ON tm_sensor_read_update.ds_id = td_device_sensor.ds_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+LEFT JOIN tm_device ON tm_device.dev_id = td_sensor.dev_id 
+LEFT JOIN tm_site ON tm_site.site_id = tm_device.site_id 
+WHERE   tm_device.tenant_id = "TENANT22" 
+
+Setiap Chart dikelompokan berdasarkan SITE dan SENSOR 
+
+
+----
+Pada modul Alert, buatkan list alert diambil dari tabel tm_alarm. 
+Untuk tampilan ui/ux, sarankan tampilan yang paling sering digunakan untuk menampilkan model-model alert / alarm 
+
+Untuk mengambil list Alert / Alarm mengunakan  SQL : 
+SELECT tm_alarm.alm_date,tr_alarm_code.alcode_note,tm_device.dev_name, td_device_sensor.ds_name, 
+DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") AS read_date, tm_sensor_read.read_value,tr_unit.unit_symbol 
+FROM tm_alarm
+LEFT JOIN tm_sensor_read ON tm_alarm.read_id = tm_sensor_read.read_id 
+LEFT JOIN tr_alarm_code ON tm_alarm.alcode_id = tr_alarm_code.alcode_id
+LEFT JOIN tm_device ON tm_device.dev_id = tm_sensor_read.dev_id
+LEFT JOIN td_device_sensor ON td_device_sensor.ds_id = tm_sensor_read.ds_id AND tm_sensor_read.dev_id = td_device_sensor.dev_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+
+Tambahkan fungsi filter berdasarkan Tanggal Alarm ( field alm_date) , Site, Cluster dan Device ID 
+
+
+----------
+Ada error : Error: Unknown column 'tm_alarm.tenant_id' in 'where clause'
+[Nest] 6552  - 21/11/2025, 06.59.01   ERROR [ExceptionsHandler] Unknown column 'tm_alarm.tenant_id' in 'where clause'
+QueryFailedError: Unknown column 'tm_alarm.tenant_id' in 'where clause'
+    at Query.onResult (D:\Project\vibe_coding\Agro_V1\app-backend\node_modules\typeorm\driver\src\driver\mysql\MysqlQueryRunner.ts:248:33)
+	
+FYI, Untuk mendapatkan Tenant_id, ambil dari tabel tm_device sehinggak SQL nya seperti ini : 
+
+SELECT tm_alarm.alm_date,tr_alarm_code.alcode_note,tm_device.dev_name, td_device_sensor.ds_name, 
+DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") AS read_date, tm_sensor_read.read_value,tr_unit.unit_symbol , 
+tm_tenant.tenant_name,tm_tenant.tenant_id, 
+FROM tm_alarm
+LEFT JOIN tm_sensor_read ON tm_alarm.read_id = tm_sensor_read.read_id 
+LEFT JOIN tr_alarm_code ON tm_alarm.alcode_id = tr_alarm_code.alcode_id
+LEFT JOIN tm_device ON tm_device.dev_id = tm_sensor_read.dev_id
+LEFT JOIN td_device_sensor ON td_device_sensor.ds_id = tm_sensor_read.ds_id AND tm_sensor_read.dev_id = td_device_sensor.dev_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+left join tm_tenant on tm_device.tenant_id = tm_tenant.tenant_id
+
+Perbaiki juga untuk mendapatkan field cluster_id dan site_id SQL : SELECT tm_alarm.alm_date,tr_alarm_code.alcode_note,tm_device.dev_name, td_device_sensor.ds_name, 
+DATE_FORMAT(tm_sensor_read.read_date,"%d/%m/%Y %H:%i:%s") AS read_date, tm_sensor_read.read_value,tr_unit.unit_symbol , 
+tm_tenant.tenant_name,tm_tenant.tenant_id, tm_cluster.cluster_id, tm_cluster.cluster_name, tm_site.site_id,tm_site.site_name
+FROM tm_alarm
+LEFT JOIN tm_sensor_read ON tm_alarm.read_id = tm_sensor_read.read_id 
+LEFT JOIN tr_alarm_code ON tm_alarm.alcode_id = tr_alarm_code.alcode_id
+LEFT JOIN tm_device ON tm_device.dev_id = tm_sensor_read.dev_id
+LEFT JOIN td_device_sensor ON td_device_sensor.ds_id = tm_sensor_read.ds_id AND tm_sensor_read.dev_id = td_device_sensor.dev_id
+LEFT JOIN tr_unit ON tr_unit.unit_id = td_device_sensor.unit_id
+LEFT JOIN tm_tenant ON tm_device.tenant_id = tm_tenant.tenant_id
+LEFT JOIN tm_cluster ON tm_cluster.cluster_id = tm_device.cluster_id
+LEFT JOIN tm_site ON tm_device.site_id = tm_site.site_id 
+
+Tenant_id difilterberdasarkan tenant_aktif login 
+
+Untuk filter berdasarkan tanggal, default tanggal 7 hari dari tanggal sekarang 
+--------------
+
+Pada modul monitoring, pindahkan Caruseel yang berisi image duluar DEVICE , sebab image tersebut dikelompokan berdasarkan Tenant / Site / Cluster
+Sehingga lebih relevant jika disimpan di card khusus 
+
+-----
+Pada Dashboard, tambahkan weather forcast dengan sumber dari API Opensource atau free. 
+Lokasi yang diambil berdasarkan site . Jika tenant mempunyai banyak site, ambil site pertama saja 
+-----
+
+
+┌──────────────────────────────────────────────────────┐
+│ ┌─────────────┐                                      │
+│ │   MAPS      │                                      │
+│ │             │   ┌──────────────────────────────┐   │
+│ │             │   │ Weather Forcast              │   │
+│ │             │   │                              │   │
+│ │             │   └──────────────────────────────┘   │
+│ │             │   ┌──────────────────────────────┐   │
+│ │             │   │Activity Timeline             │   │
+│ │  	        │   │                              │   │
+│ │             │   │                              │   │
+│ └─────────────┘   └──────────────────────────────┘   │
+└──────────────────────────────────────────────────────┘
+
+
+--------------
+Pada dashboard tambahkan  summary dari setiap sensor  untuk setiap parameter 
+Untuk mendapatkan nilai parameter gunakan SQL : 
+SELECT a.ds_id, a.read_update_date, a.read_update_value, b.dev_id, b.ds_min_value,b.ds_max_value,
+b.ds_min_norm_value, b.ds_max_norm_value,b.ds_min_val_warn, b.ds_max_val_warn, c.unit_symbol
+FROM tm_sensor_read_update a 
+LEFT JOIN td_device_sensor b ON a.ds_id = b.ds_id
+LEFT JOIN tr_unit c ON b.unit_id = c.unit_id
+WHERE a.tenant_id = 'TENANT22'
+
+Sumary yang ditampilkan jika a.read_update_value <= b.ds_min_norm_value tampilkan dan beri keterangan "Nilai Dibawah Normal (nilai Min Normal) 
+atau jika  a.read_update_value >= b.ds_max_norm_value tampilkan dan beri keterangan "Nilai Diatas Normal (nilai max Normal) 
+Beri keterangan Nama Sensor dan Device_id 
+
+Jika semua parameter NORMAL, beriketerangan, Semua Parameter Normal 
+
+Sesuaikan layout UI dan UX dashboard, supaya lebih proporsional 
+
+
+------------
+pada user role, ganti istilah user role FARMER menjadi OPERATOR , dan user role INVESTOR menjadi OWNER. 
+Untuk akses menu / modul : 
+- Owner : Dashboard, Monitor , Report
+- Operator : Dashboard, Monitor , Report , Environtment. Untuk submenu Environtment, operator tidak diberi hak akses untuk Add dan update data , tetapi hanya view saja.
+ 

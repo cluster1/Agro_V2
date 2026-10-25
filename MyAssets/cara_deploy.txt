@@ -1,0 +1,21 @@
+Bantu saya step ny step untuk deploy aplikasi frontend dan backend ke server VPS. 
+Untuk informasi : 
+- Source aplikasi ada di https://github.com/cluster1/agro_apps 
+- Sudah terinstall NGINX 
+- sudah terinstall database mariadb username : user_nusa1
+
+
+
+----------
+Create user mariadb : 
+CREATE USER 'user_nusa1'@'%' IDENTIFIED BY 'tarakanalada';
+GRANT ALL PRIVILEGES ON *.* TO 'user_nusa1'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+----------
+Git Clone menggunakan SSH KEY : 
+git clone git@github.com:cluster1/agro_apps.git
+
+
+----------
+pm2 logs agro-frontend
+

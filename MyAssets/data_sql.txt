@@ -1,0 +1,99 @@
+
+/*Data for the table `td_device_sensor` */
+
+insert  into `td_device_sensor`(`ds_id`,`dev_id`,`tenant_id`,`unit_id`,`sens_id`,`cluster_id`,`animal_id`,`dc_normal_value`,`ds_min_norm_value`,`ds_max_norm_value`,`ds_min_value`,`ds_max_value`,`ds_min_val_warn`,`ds_max_val_warn`,`ds_name`,`ds_address`,`ds_seq`,`ds_sts`,`ds_created`,`ds_update`) values ('0ce796a1-9151-41ed-ba82-89d606f8','DEVICE2','TENANT1',NULL,'bb3f65f7-2146-46eb-929a-a2ff77b1','CLUSTER1',NULL,NULL,4,NULL,1,100,NULL,NULL,'hum1','4002',NULL,1,NULL,NULL);
+insert  into `td_device_sensor`(`ds_id`,`dev_id`,`tenant_id`,`unit_id`,`sens_id`,`cluster_id`,`animal_id`,`dc_normal_value`,`ds_min_norm_value`,`ds_max_norm_value`,`ds_min_value`,`ds_max_value`,`ds_min_val_warn`,`ds_max_val_warn`,`ds_name`,`ds_address`,`ds_seq`,`ds_sts`,`ds_created`,`ds_update`) values ('816fa81a-ba82-4f79-a943-0876b062','DEVICE2','TENANT1',NULL,'f976261c-fcd7-488c-8555-61f3d1a8','CLUSTER1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'32423423','werew',333,1,NULL,NULL);
+insert  into `td_device_sensor`(`ds_id`,`dev_id`,`tenant_id`,`unit_id`,`sens_id`,`cluster_id`,`animal_id`,`dc_normal_value`,`ds_min_norm_value`,`ds_max_norm_value`,`ds_min_value`,`ds_max_value`,`ds_min_val_warn`,`ds_max_val_warn`,`ds_name`,`ds_address`,`ds_seq`,`ds_sts`,`ds_created`,`ds_update`) values ('8d0e433c-23d0-4d15-aaae-c2df0ed3','DEVICE1','TENANT1',NULL,'753263a7-36b8-4a40-9c5e-c504c58e',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'324234','234',-5,1,NULL,NULL);
+insert  into `td_device_sensor`(`ds_id`,`dev_id`,`tenant_id`,`unit_id`,`sens_id`,`cluster_id`,`animal_id`,`dc_normal_value`,`ds_min_norm_value`,`ds_max_norm_value`,`ds_min_value`,`ds_max_value`,`ds_min_val_warn`,`ds_max_val_warn`,`ds_name`,`ds_address`,`ds_seq`,`ds_sts`,`ds_created`,`ds_update`) values ('DEVICE-00101','DEVICE-001','TENANT-DEMO-001','UNIT-temp\r\n','SENSOR-001','CLUSTER-001','0',23,10,35,0,100,10,30,'Temperature','4001',10,1,'2001-01-01 00:00:00','2001-01-01 00:00:00');
+insert  into `td_device_sensor`(`ds_id`,`dev_id`,`tenant_id`,`unit_id`,`sens_id`,`cluster_id`,`animal_id`,`dc_normal_value`,`ds_min_norm_value`,`ds_max_norm_value`,`ds_min_value`,`ds_max_value`,`ds_min_val_warn`,`ds_max_val_warn`,`ds_name`,`ds_address`,`ds_seq`,`ds_sts`,`ds_created`,`ds_update`) values ('DEVICE-00102','DEVICE-001','TENANT-DEMO-001','UNIT-HUM','SENSOR-001','CLUSTER-001','0',50,20,80,0,100,20,80,'Humidity','4002',20,1,'2001-01-01 00:00:00','2001-01-01 00:00:00');
+
+
+/*Data for the table `td_sensor` */
+
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('753263a7-36b8-4a40-9c5e-c504c58e','TENANT1','DEVICE1','Temperatur Lingkungan','4000','Sawah 1',-100,100,10);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('bb3f65f7-2146-46eb-929a-a2ff77b1','TENANT1','DEVICE2','Temp22','','test',NULL,NULL,NULL);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('f976261c-fcd7-488c-8555-61f3d1a8','TENANT1','DEVICE2','Temp22','','test',1,1,1);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-001','TENANT-DEMO-001','DEVICE-001','Temperature Sensor','0x01','Inside device box',-6.4123,107.4567,25);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-002','TENANT-DEMO-001','DEVICE-001','Humidity Sensor','0x02','Inside device box',-6.4123,107.4567,25);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-003','TENANT-DEMO-001','DEVICE-001','Soil Moisture Sensor','0x03','Ground level',-6.4123,107.4567,25);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-004','TENANT-DEMO-001','DEVICE-002','Temperature Sensor','0x01','Inside kandang',-6.6789,106.8456,350);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-005','TENANT-DEMO-001','DEVICE-002','Humidity Sensor','0x02','Inside kandang',-6.6789,106.8456,350);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-006','TENANT-DEMO-001','DEVICE-002','NH3 Gas Sensor','0x03','Ceiling level',-6.6789,106.8456,350);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-007','TENANT-DEMO-001','DEVICE-003','Temperature Sensor','0x01','Greenhouse center',-6.8234,107.6123,1200);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-008','TENANT-DEMO-001','DEVICE-003','Humidity Sensor','0x02','Greenhouse center',-6.8234,107.6123,1200);
+insert  into `td_sensor`(`sens_id`,`tenant_id`,`dev_id`,`sens_name`,`sens_address`,`sens_location`,`sens_lat`,`sens_lon`,`sens_alt`) values ('SENSOR-009','TENANT-DEMO-001','DEVICE-003','Light Sensor','0x03','Roof level',-6.8234,107.6123,1200);
+
+
+/*Data for the table `tm_cluster` */
+
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-001','TENANT-DEMO-001','SITE-001','Blok Sawah A','FIELD',5000,4500,'Blok A untuk padi varietas IR64','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-002','TENANT-DEMO-001','SITE-001','Blok Sawah B','FIELD',3000,2800,'Blok B untuk padi varietas Ciherang','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-003','TENANT-DEMO-001','SITE-002','Kandang Ayam A','HOUSE',2000,1850,'Kandang layer fase produksi','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-004','TENANT-DEMO-001','SITE-002','Kandang Ayam B','HOUSE',1500,1200,'Kandang broiler','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-005','TENANT-DEMO-001','SITE-003','Greenhouse Tomat','GREENHOUSE',1000,900,'Greenhouse untuk tomat hidroponik','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER-4','TENANT-DEMO-001','SITE-2','TEST','FIELD',100,100,'test','2025-10-22 09:54:44','2025-10-22 09:54:44');
+insert  into `tm_cluster`(`cluster_id`,`tenant_id`,`site_id`,`cluster_name`,`cluster_type`,`cluster_capacity`,`cluster_current`,`cluster_desc`,`cluster_created`,`cluster_update`) values ('CLUSTER1','TENANT1','SITE1','Sawah Bp. H. Asep','FIELD',1000,1000,'Tanaman Padi Varietas Inpari 34','2025-10-22 09:52:56','2025-10-22 09:52:56');
+
+
+/*Data for the table `tm_device` */
+
+insert  into `tm_device`(`dev_id`,`tenant_id`,`site_id`,`cluster_id`,`user_id`,`dev_name`,`dev_token`,`dev_location`,`dev_lon`,`dev_lat`,`dev_alt`,`dev_number_id`,`dev_ip`,`dev_port`,`dev_img`,`dev_sts`,`dev_created`,`dev_update`) values ('DEVICE-001','TENANT-DEMO-001','SITE-001','CLUSTER-001','USER-FARMER-001','IoT Node Sawah A-1','TOKEN-ABC123XYZ','Corner A, Blok Sawah A',107.4567,-6.4123,25,'DEV-001','192.168.1.100','8080',NULL,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_device`(`dev_id`,`tenant_id`,`site_id`,`cluster_id`,`user_id`,`dev_name`,`dev_token`,`dev_location`,`dev_lon`,`dev_lat`,`dev_alt`,`dev_number_id`,`dev_ip`,`dev_port`,`dev_img`,`dev_sts`,`dev_created`,`dev_update`) values ('DEVICE-002','TENANT-DEMO-001','SITE-002','CLUSTER-003','USER-FARMER-001','IoT Node Kandang A-1','TOKEN-DEF456UVW','Inside Kandang A',106.8456,-6.6789,350,'DEV-002','192.168.1.101','8080',NULL,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_device`(`dev_id`,`tenant_id`,`site_id`,`cluster_id`,`user_id`,`dev_name`,`dev_token`,`dev_location`,`dev_lon`,`dev_lat`,`dev_alt`,`dev_number_id`,`dev_ip`,`dev_port`,`dev_img`,`dev_sts`,`dev_created`,`dev_update`) values ('DEVICE-003','TENANT-DEMO-001','SITE-003','CLUSTER-005','USER-FARMER-002','IoT Node Greenhouse-1','TOKEN-GHI789RST','Greenhouse Center',107.6123,-6.8234,1200,'DEV-003','192.168.1.102','8080',NULL,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_device`(`dev_id`,`tenant_id`,`site_id`,`cluster_id`,`user_id`,`dev_name`,`dev_token`,`dev_location`,`dev_lon`,`dev_lat`,`dev_alt`,`dev_number_id`,`dev_ip`,`dev_port`,`dev_img`,`dev_sts`,`dev_created`,`dev_update`) values ('DEVICE1','TENANT1','SITE1','CLUSTER1','USER-ADMIN-001','Device 2025 001',NULL,'Sawah Kiri',NULL,NULL,NULL,'DEV25001',NULL,NULL,NULL,1,'2025-10-22 10:25:24','2025-10-22 20:51:51');
+insert  into `tm_device`(`dev_id`,`tenant_id`,`site_id`,`cluster_id`,`user_id`,`dev_name`,`dev_token`,`dev_location`,`dev_lon`,`dev_lat`,`dev_alt`,`dev_number_id`,`dev_ip`,`dev_port`,`dev_img`,`dev_sts`,`dev_created`,`dev_update`) values ('DEVICE2','TENANT1','SITE1','CLUSTER1','USER-ADMIN-001','device2',NULL,'yg sebelah kanan ',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2025-10-22 16:54:16','2025-10-22 16:54:16');
+
+
+/*Data for the table `tm_livestock` */
+
+insert  into `tm_livestock`(`animal_id`,`tenant_id`,`site_id`,`cluster_id`,`animal_tag`,`animal_species`,`animal_breed`,`animal_gender`,`animal_birthdate`,`animal_status`) values ('ANIMAL-001','TENANT-DEMO-001','SITE-002','CLUSTER-003','TAG-001','Ayam','Leghorn','F','2024-01-15','aktif');
+insert  into `tm_livestock`(`animal_id`,`tenant_id`,`site_id`,`cluster_id`,`animal_tag`,`animal_species`,`animal_breed`,`animal_gender`,`animal_birthdate`,`animal_status`) values ('ANIMAL-002','TENANT-DEMO-001','SITE-002','CLUSTER-003','TAG-002','Ayam','Leghorn','F','2024-01-15','aktif');
+insert  into `tm_livestock`(`animal_id`,`tenant_id`,`site_id`,`cluster_id`,`animal_tag`,`animal_species`,`animal_breed`,`animal_gender`,`animal_birthdate`,`animal_status`) values ('ANIMAL-003','TENANT-DEMO-001','SITE-002','CLUSTER-004','TAG-003','Ayam','Broiler','M','2024-03-01','aktif');
+
+
+
+/*Data for the table `tm_site` */
+
+insert  into `tm_site`(`site_id`,`tenant_id`,`site_name`,`site_type`,`site_address`,`site_lon`,`site_lat`,`site_alt`,`site_sts`,`site_created`,`site_update`) values ('SITE-001','TENANT-DEMO-001','Lahan Padi Sawah Cikampek','FARM','Cikampek, Karawang, Jawa Barat',107.4567,-6.4123,25,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_site`(`site_id`,`tenant_id`,`site_name`,`site_type`,`site_address`,`site_lon`,`site_lat`,`site_alt`,`site_sts`,`site_created`,`site_update`) values ('SITE-002','TENANT-DEMO-001','Kandang Ayam Bogor','RANCH','Ciawi, Bogor, Jawa Barat',106.8456,-6.6789,350,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_site`(`site_id`,`tenant_id`,`site_name`,`site_type`,`site_address`,`site_lon`,`site_lat`,`site_alt`,`site_sts`,`site_created`,`site_update`) values ('SITE-003','TENANT-DEMO-001','Greenhouse Sayuran Lembang','GREENHOUSE','Lembang, Bandung Barat, Jawa Barat',107.6123,-6.8234,1200,1,'2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_site`(`site_id`,`tenant_id`,`site_name`,`site_type`,`site_address`,`site_lon`,`site_lat`,`site_alt`,`site_sts`,`site_created`,`site_update`) values ('SITE-2','TENANT-DEMO-001','werwerwerwer','FARM',NULL,NULL,NULL,NULL,1,'2025-10-22 07:14:09','2025-10-22 07:14:09');
+insert  into `tm_site`(`site_id`,`tenant_id`,`site_name`,`site_type`,`site_address`,`site_lon`,`site_lat`,`site_alt`,`site_sts`,`site_created`,`site_update`) values ('SITE1','TENANT1','Kelompok Tani 1','FARM','Desa Karang Tengah ',NULL,NULL,NULL,1,'2025-10-22 09:43:51','2025-10-22 09:43:51');
+
+
+
+/*Data for the table `tm_tenant` */
+
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT-DEMO-001','PT Agro Sejahtera','perusahaan','Jl. Pertanian No. 123, Jakarta Selatan','Budi','+628123456789',NULL,'1','2025-10-20 10:04:43','2025-10-22 09:31:47');
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT-DEMO-002','Koperasi Tani Maju','koperasi','Jl. Sawah Besar No. 45, Bogor',NULL,'+628234567890',NULL,'1','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT-GLOBAL-001','Global Admin Organization','system','System Office',NULL,'+62000000000',NULL,'1','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT1','BPP Karang Tengah','pemerintah','Jl. Karang Tengah no. 100','Pa Iman','08098999',NULL,'1','2025-10-22 07:33:43','2025-10-22 10:10:18');
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT2','aaaa','perusahaan','ssss','ffff','dddd','uploads/tenant-logos/tenant-logo-1761094200486-856612265.jpg','0','2025-10-22 07:50:00','2025-10-22 09:42:37');
+insert  into `tm_tenant`(`tenant_id`,`tenant_name`,`tenant_type`,`tenant_address`,`tenant_pic`,`tenant_contact`,`tenant_logo`,`tenant_sts`,`tenant_created`,`tenant_update`) values ('TENANT3','qqq','koperasi','www','rrr','eee',NULL,'0','2025-10-22 07:52:19','2025-10-22 07:52:19');
+
+
+/*Data for the table `tm_user` */
+
+insert  into `tm_user`(`user_id`,`tenant_id`,`user_name`,`user_pass`,`user_email`,`user_phone`,`user_role`,`user_level`,`user_sts`,`user_created`,`user_update`) values ('USER-ADMIN-001','TENANT-GLOBAL-001','Global Admin','$2a$10$cjQw99NTjtgIDw5LYhc8Ru5JNDzQNMCN50detAm24ZUBumx/zOtyu','admin@agro.com','+62811111111','admin',0,'active','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_user`(`user_id`,`tenant_id`,`user_name`,`user_pass`,`user_email`,`user_phone`,`user_role`,`user_level`,`user_sts`,`user_created`,`user_update`) values ('USER-FARMER-001','TENANT-DEMO-001','Ahmad Petani','$2a$10$1n7LpG4BMj9Q6Op7wU6ub.gamf8pHESNOtaIKNWPbHA12aM6IJ7wS','ahmad@agrosejahtera.com','+62833333333','farmer',2,'active','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_user`(`user_id`,`tenant_id`,`user_name`,`user_pass`,`user_email`,`user_phone`,`user_role`,`user_level`,`user_sts`,`user_created`,`user_update`) values ('USER-FARMER-002','TENANT-DEMO-001','Siti Tani','$2b$10$K7L/8Q2tXJ9PVDqJ7hQ3r.zW5qKJ3J7xY5J7QF7Y5J7QF7Y5J7QF7e','siti@agrosejahtera.com','+62844444444','farmer',2,'active','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_user`(`user_id`,`tenant_id`,`user_name`,`user_pass`,`user_email`,`user_phone`,`user_role`,`user_level`,`user_sts`,`user_created`,`user_update`) values ('USER-INVESTOR-001','TENANT-DEMO-001','Investor One','$2b$10$K7L/8Q2tXJ9PVDqJ7hQ3r.zW5qKJ3J7xY5J7QF7Y5J7QF7Y5J7QF7e','investor@agrosejahtera.com','+62855555555','investor',2,'active','2025-10-20 10:04:43','2025-10-20 10:04:43');
+insert  into `tm_user`(`user_id`,`tenant_id`,`user_name`,`user_pass`,`user_email`,`user_phone`,`user_role`,`user_level`,`user_sts`,`user_created`,`user_update`) values ('USER-TENANT-001','TENANT-DEMO-001','Budi Santoso','$2a$10$IZxKihm1rwvU3yflQgwoLuFu1KrfsY/KPJXOSMUU37EB4dL3oLluC','budi@agrosejahtera.com','+62822222222','tenant_admin',1,'active','2025-10-20 10:04:43','2025-10-20 10:04:43');
+
+
+/*Data for the table `tr_alarm_code` */
+
+insert  into `tr_alarm_code`(`alcode_id`,`alcode_note`,`alcode_sts`,`alcode_update`) values ('ALARM-DEVICE-OFFLINE','Device offline',1,'2025-10-20 10:04:43');
+insert  into `tr_alarm_code`(`alcode_id`,`alcode_note`,`alcode_sts`,`alcode_update`) values ('ALARM-HUM-HIGH','Humidity too high',1,'2025-10-20 10:04:43');
+insert  into `tr_alarm_code`(`alcode_id`,`alcode_note`,`alcode_sts`,`alcode_update`) values ('ALARM-HUM-LOW','Humidity too low',1,'2025-10-20 10:04:43');
+insert  into `tr_alarm_code`(`alcode_id`,`alcode_note`,`alcode_sts`,`alcode_update`) values ('ALARM-TEMP-HIGH','Temperature too high',1,'2025-10-20 10:04:43');
+insert  into `tr_alarm_code`(`alcode_id`,`alcode_note`,`alcode_sts`,`alcode_update`) values ('ALARM-TEMP-LOW','Temperature too low',1,'2025-10-20 10:04:43');
+
+
+/*Data for the table `tr_unit` */
+
+insert  into `tr_unit`(`unit_id`,`unit_name`,`unit_symbol`,`unit_sts`,`unit_update`) values ('UNIT-HUM','Percent','%',1,'2025-10-20 10:04:43');
+insert  into `tr_unit`(`unit_id`,`unit_name`,`unit_symbol`,`unit_sts`,`unit_update`) values ('UNIT-LUX','Lux','lx',1,'2025-10-20 10:04:43');
+insert  into `tr_unit`(`unit_id`,`unit_name`,`unit_symbol`,`unit_sts`,`unit_update`) values ('UNIT-PH','pH Value','pH',1,'2025-10-20 10:04:43');
+insert  into `tr_unit`(`unit_id`,`unit_name`,`unit_symbol`,`unit_sts`,`unit_update`) values ('UNIT-PPM','Parts Per Million','ppm',1,'2025-10-20 10:04:43');
+insert  into `tr_unit`(`unit_id`,`unit_name`,`unit_symbol`,`unit_sts`,`unit_update`) values ('UNIT-TEMP','Celsius','°C',1,'2025-10-20 10:04:43');
