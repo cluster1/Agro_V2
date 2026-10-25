@@ -1,0 +1,33 @@
+{
+  "name": "mqtt-iot-data-ingest",
+  "version": "1.0.0",
+  "description": "MQTT IoT Data Ingestion System - Subscribe to MQTT and store data to MySQL",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "node --test test/ingest.test.js"
+  },
+  "keywords": [
+    "mqtt",
+    "iot",
+    "mysql",
+    "data-ingestion"
+  ],
+  "author": "Yudha Ginanjar",
+  "license": "ISC",
+  "dependencies": {
+    "mqtt": "^5.3.4",
+    "mysql2": "^3.6.5",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

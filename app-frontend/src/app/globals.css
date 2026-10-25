@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Agricultural Industrial Design System */
+    --background: 40 20% 97%;
+    --foreground: 140 30% 15%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 140 30% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 30% 15%;
+    
+    /* Deep forest green - primary brand */
+    --primary: 140 45% 33%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Earth brown - secondary */
+    --secondary: 30 25% 40%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 40 15% 92%;
+    --muted-foreground: 140 10% 38%;
+    
+    /* Pale green tint - hover/focus surface (dark text, 11.9:1) */
+    --accent: 140 30% 92%;
+    --accent-foreground: 140 30% 15%;
+    
+    /* Warning amber */
+    --warning: 40 95% 50%;
+    --warning-foreground: 40 10% 10%;
+    
+    /* Danger red */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Success green */
+    --success: 140 60% 30%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Info blue */
+    --info: 200 80% 36%;
+    --info-foreground: 0 0% 98%;
+    
+    --border: 40 20% 85%;
+    --input: 140 8% 48%;
+    --ring: 140 45% 33%;
+    
+    --radius: 0.75rem;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(140 45% 35%) 0%, hsl(140 50% 45%) 100%);
+    --gradient-earth: linear-gradient(180deg, hsl(40 30% 60%) 0%, hsl(30 35% 45%) 100%);
+    --gradient-sky: linear-gradient(180deg, hsl(200 70% 60%) 0%, hsl(200 80% 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(140 45% 25%) 0%, hsl(140 40% 35%) 50%, hsl(30 35% 40%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(140 20% 20% / 0.08);
+    --shadow-md: 0 4px 16px hsl(140 20% 20% / 0.12);
+    --shadow-lg: 0 8px 24px hsl(140 20% 20% / 0.16);
+    
+  }
+
+  .dark {
+    --background: 140 25% 8%;
+    --foreground: 0 0% 95%;
+    
+    --card: 140 20% 12%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 140 20% 10%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 140 50% 45%;
+    --primary-foreground: 140 25% 8%;
+    
+    --secondary: 30 30% 40%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 140 15% 18%;
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 140 20% 20%;
+    --accent-foreground: 0 0% 95%;
+    
+    --warning: 40 95% 55%;
+    --warning-foreground: 40 10% 10%;
+    
+    --destructive: 0 80% 65%;
+    --destructive-foreground: 0 25% 8%;
+    
+    --success: 140 60% 45%;
+    --success-foreground: 140 25% 8%;
+    
+    --info: 200 70% 50%;
+    --info-foreground: 200 25% 8%;
+    
+    --border: 140 20% 20%;
+    --input: 140 8% 45%;
+    --ring: 140 50% 45%;
+    
+    --gradient-primary: linear-gradient(135deg, hsla(140, 96%, 20%, 0.404) 0%, hsla(140, 97%, 30%, 0.329) 100%);
+    --gradient-earth: linear-gradient(180deg, hsl(40 30% 50%) 0%, hsl(30 35% 35%) 100%);
+    --gradient-sky: linear-gradient(180deg, hsl(200 70% 50%) 0%, hsl(200 80% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(140 45% 15%) 0%, hsl(140 40% 25%) 50%, hsl(30 35% 30%) 100%);
+    
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.5);
+    
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Gradient utilities from template */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-earth {
+    background: var(--gradient-earth);
+  }
+  
+  .bg-gradient-sky {
+    background: var(--gradient-sky);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  /* Shadow utilities */
+  .shadow-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .shadow-md {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .shadow-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Custom Scrollbar for Timeline */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* Respect the user's OS-level "reduce motion" setting: no decorative or looping animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
