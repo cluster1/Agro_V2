@@ -7,7 +7,7 @@ MyAssets/
 app-docs/
 upload/
 *workspace
-*.md
+ 
 
 # Node modules
 node_modules/
