@@ -30,6 +30,7 @@ import {
   Eye,
   Wheat,
   FlaskConical,
+  Database,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -101,8 +102,9 @@ const navigation: NavItem[] = [
   {
     name: 'Utility',
     icon: Settings,
-    roles: ['admin', 'tenant_admin'],
+    roles: ['admin', 'tenant_admin', 'agronom'],
     children: [
+      { name: 'Master Data', href: '/master-data', icon: Database, roles: ['admin', 'tenant_admin', 'agronom'] },
       { name: 'Tenant', href: '/tenants', icon: Building2, roles: ['admin'] },
       { name: 'Users', href: '/users', icon: Users, roles: ['admin', 'tenant_admin'] },
     ]
