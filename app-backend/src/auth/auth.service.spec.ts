@@ -85,7 +85,7 @@ describe('AuthService', () => {
 
     it('does not let level 0 with a non-admin role skip the tenant status check', async () => {
       const { service } = setup(
-        makeUser({ user_role: 'farmer', user_level: 0, tenant: { tenant_id: 'T1', tenant_sts: 0 } }),
+        makeUser({ user_role: 'operator', user_level: 0, tenant: { tenant_id: 'T1', tenant_sts: 0 } }),
       );
       expect(await service.validateUser('u1@test.local', 'correct-horse-battery')).toBeNull();
     });
@@ -282,9 +282,9 @@ describe('AuthService', () => {
     it('picks up role changes at refresh time', async () => {
       const { service, users, jwt } = setup();
       const { refreshToken } = await service.login(makeUser());
-      users.findOne.mockResolvedValue(makeUser({ user_role: 'viewer', user_level: 2 }));
+      users.findOne.mockResolvedValue(makeUser({ user_role: 'agronom', user_level: 2 }));
       const { accessToken } = await service.refreshToken(refreshToken);
-      expect(jwt.verify(accessToken)).toMatchObject({ user_role: 'viewer', user_level: 2 });
+      expect(jwt.verify(accessToken)).toMatchObject({ user_role: 'agronom', user_level: 2 });
     });
   });
 

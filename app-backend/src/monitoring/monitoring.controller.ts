@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { parseBoundedInt } from '../common/utils/parse-bounded-int';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 @ApiTags('monitoring')
 @ApiBearerAuth()
@@ -13,13 +14,13 @@ import { TenantScope } from '../common/decorators/tenant-scope.decorator';
 export class MonitoringController {
   constructor(private readonly monitoringService: MonitoringService) {}
 
-  @Get('tenants/:tenantId/monitoring/devices')
+  @Get('monitoring/devices')
   @ApiOperation({ summary: 'Get all devices with sensors and latest readings' })
   @ApiQuery({ name: 'siteId', required: false })
   @ApiQuery({ name: 'clusterId', required: false })
   @ApiResponse({ status: 200, description: 'List of devices with sensor data' })
   async getDevicesWithSensors(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Query('siteId') siteId?: string,
     @Query('clusterId') clusterId?: string,
   ) {
@@ -53,33 +54,33 @@ export class MonitoringController {
     return this.monitoringService.getSensorHistory(devId, sensId, dsId, parseBoundedInt('hours', hours, 24, 1, 720), scope);
   }
 
-  @Get('tenants/:tenantId/monitoring/last-readings')
+  @Get('monitoring/last-readings')
   @ApiOperation({ summary: 'Get last N sensor readings for a tenant' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Last sensor readings' })
   async getLastReadings(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Query('limit') limit?: number,
   ) {
     return this.monitoringService.getLastReadings(tenantId, parseBoundedInt('limit', limit, 10, 1, 500));
   }
 
-  @Get('tenants/:tenantId/monitoring/alerts')
+  @Get('monitoring/alerts')
   @ApiOperation({ summary: 'Get alerts for a tenant in last N hours' })
   @ApiQuery({ name: 'hours', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Alert data' })
   async getAlerts(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Query('hours') hours?: number,
   ) {
     return this.monitoringService.getAlerts(tenantId, parseBoundedInt('hours', hours, 24, 1, 720));
   }
 
-  @Get('tenants/:tenantId/monitoring/sensor-summary')
+  @Get('monitoring/sensor-summary')
   @ApiOperation({ summary: 'Get sensor parameter summary' })
   @ApiResponse({ status: 200, description: 'Sensor parameter summary' })
   async getSensorSummary(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
   ) {
     return this.monitoringService.getSensorSummary(tenantId);
   }

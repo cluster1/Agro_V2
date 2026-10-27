@@ -27,8 +27,8 @@ export class Tenant {
   @Column({ type: 'varchar', length: 255, nullable: true })
   tenant_logo: string;
 
-  @Column({ type: 'tinyint', default: 1 })
-  tenant_sts: number;
+  @Column({ type: 'varchar', length: 2, nullable: true })
+  tenant_sts: string;
 
   @CreateDateColumn({ type: 'datetime', nullable: true })
   tenant_created: Date;

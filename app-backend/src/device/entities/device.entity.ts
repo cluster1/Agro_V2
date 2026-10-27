@@ -13,7 +13,7 @@ export class Device {
   @Column({ type: 'varchar', length: 32, nullable: true })
   tenant_id: string;
 
-  @Column({ type: 'varchar', length: 32 })
+  @Column({ type: 'varchar', length: 32, nullable: true })
   site_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })

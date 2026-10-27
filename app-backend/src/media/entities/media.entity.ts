@@ -19,7 +19,19 @@ export class Media {
   cluster_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
+  plant_id: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  pact_id: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  obs_id: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
   user_id: string;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  dev_id: string;
 
   @Column({ type: 'varchar', length: 16, nullable: true })
   media_type: string;
@@ -29,6 +41,12 @@ export class Media {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   media_desc: string;
+
+  @Column({ type: 'double', nullable: true })
+  media_lon: number;
+
+  @Column({ type: 'double', nullable: true })
+  media_lat: number;
 
   @Column({ type: 'datetime', nullable: true })
   media_date: Date;

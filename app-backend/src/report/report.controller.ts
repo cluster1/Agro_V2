@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Response } from 'express';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_RANGE_DAYS = 366;
@@ -37,16 +38,16 @@ export class ReportController {
     return this.reportService.getGlobalDashboard();
   }
 
-  @Get('tenants/:tenantId/dashboard')
+  @Get('dashboard')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get dashboard summary for specific tenant' })
   @ApiResponse({ status: 200, description: 'Dashboard summary data' })
-  getDashboardSummary(@Param('tenantId') tenantId: string) {
+  getDashboardSummary(@TenantId() tenantId: string) {
     return this.reportService.getDashboardSummary(tenantId);
   }
 
   @Get('cluster/:clusterId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get cluster report' })
   @ApiResponse({ status: 200, description: 'Cluster report data' })
   getClusterReport(
@@ -56,46 +57,46 @@ export class ReportController {
     return this.reportService.getClusterReport(clusterId, scope);
   }
 
-  @Get('tenants/:tenantId/latest-readings')
+  @Get('latest-readings')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get latest 10 sensor readings for tenant' })
   @ApiResponse({ status: 200, description: 'Latest sensor readings' })
-  getLatestReadings(@Param('tenantId') tenantId: string) {
+  getLatestReadings(@TenantId() tenantId: string) {
     return this.reportService.getLatestReadings(tenantId);
   }
 
-  @Get('tenants/:tenantId/timeline')
+  @Get('timeline')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get combined timeline with readings and alerts' })
   @ApiResponse({ status: 200, description: 'Combined timeline data' })
-  getCombinedTimeline(@Param('tenantId') tenantId: string) {
+  getCombinedTimeline(@TenantId() tenantId: string) {
     return this.reportService.getCombinedTimeline(tenantId);
   }
 
-  @Get('tenants/:tenantId/sites-map')
+  @Get('sites-map')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get sites with coordinates for map display' })
   @ApiResponse({ status: 200, description: 'Sites with location data' })
-  getSitesForMap(@Param('tenantId') tenantId: string) {
+  getSitesForMap(@TenantId() tenantId: string) {
     return this.reportService.getSitesForMap(tenantId);
   }
 
-  @Get('tenants/:tenantId/map-data')
+  @Get('map-data')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Get sites, devices, and sensors with coordinates and connections for enhanced map' })
   @ApiResponse({ status: 200, description: 'Complete map data with sites, devices, sensors, and their relationships' })
-  getSitesWithDevicesAndSensors(@Param('tenantId') tenantId: string) {
+  getSitesWithDevicesAndSensors(@TenantId() tenantId: string) {
     return this.reportService.getSitesWithDevicesAndSensors(tenantId);
   }
 
-  @Get('tenants/:tenantId/sensor-readings/excel')
+  @Get('sensor-readings/excel')
   @UseGuards(JwtAuthGuard, TenantGuard)
   @ApiOperation({ summary: 'Download sensor readings report in Excel format' })
   @ApiQuery({ name: 'startDate', required: true, description: 'Start date (YYYY-MM-DD)' })
   @ApiQuery({ name: 'endDate', required: true, description: 'End date (YYYY-MM-DD)' })
   @ApiResponse({ status: 200, description: 'Excel file download' })
   async downloadSensorReadingsExcel(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Res() res: Response,

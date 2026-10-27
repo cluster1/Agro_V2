@@ -28,7 +28,7 @@ describe('RolesGuard', () => {
   const guard = new RolesGuard(new Reflector());
 
   it('allows when no @Roles metadata is present', () => {
-    const { context } = ctx({ user_role: 'viewer', user_level: 2 });
+    const { context } = ctx({ user_role: 'agronom', user_level: 2 });
     expect(guard.canActivate(context)).toBe(true);
   });
 
@@ -37,7 +37,7 @@ describe('RolesGuard', () => {
     expect(guard.canActivate(ctx({ user_role: 'tenant_admin', user_level: 1 }, {}, handler, cls).context)).toBe(true);
   });
 
-  it.each(['investor', 'viewer', 'operator', 'farmer'])('denies read-only role %s on a write route', (role) => {
+  it.each(['agronom', 'operator'])('denies read-only role %s on a write route', (role) => {
     const { handler, cls } = handlerRequiring('admin', 'tenant_admin');
     expect(guard.canActivate(ctx({ user_role: role, user_level: 2 }, {}, handler, cls).context)).toBe(false);
   });
@@ -62,7 +62,7 @@ describe('RolesGuard', () => {
 
   it('level 0 alone is not enough (no role admin)', () => {
     const { handler, cls } = handlerRequiring('tenant_admin');
-    expect(guard.canActivate(ctx({ user_role: 'farmer', user_level: 0 }, {}, handler, cls).context)).toBe(false);
+    expect(guard.canActivate(ctx({ user_role: 'operator', user_level: 0 }, {}, handler, cls).context)).toBe(false);
   });
 
   it('role admin alone is not enough: it does not satisfy @Roles("admin") below level 0', () => {
@@ -97,7 +97,7 @@ describe('TenantGuard', () => {
   });
 
   it('does not let level 0 without role admin cross tenants', () => {
-    const { context } = ctx({ tenant_id: 'T0', user_role: 'farmer', user_level: 0 }, { tenantId: 'T2' });
+    const { context } = ctx({ tenant_id: 'T0', user_role: 'operator', user_level: 0 }, { tenantId: 'T2' });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
@@ -109,5 +109,42 @@ describe('TenantGuard', () => {
   it('passes routes without :tenantId (those rely on @TenantScope in the service)', () => {
     const { context } = ctx({ tenant_id: 'T1', user_level: 1 }, {});
     expect(guard.canActivate(context)).toBe(true);
+  });
+});
+
+describe('TenantGuard with X-Tenant-Id', () => {
+  const guard = new TenantGuard();
+  const withHeader = (user: any, header?: string) => {
+    const { request, context } = ctx(user, {});
+    request.headers = header === undefined ? {} : { 'x-tenant-id': header };
+    return { request, context };
+  };
+  const admin = { tenant_id: 'T0', user_role: 'admin', user_level: 0 };
+
+  it('ignores the header for a tenant admin', () => {
+    const { request, context } = withHeader({ tenant_id: 'T1', user_role: 'tenant_admin', user_level: 1 }, 'T2');
+    expect(guard.canActivate(context)).toBe(true);
+    expect(request.tenantId).toBe('T1');
+  });
+
+  it.each([
+    ['role admin at level 2', { tenant_id: 'T1', user_role: 'admin', user_level: 2 }],
+    ['level 0 with role operator', { tenant_id: 'T1', user_role: 'operator', user_level: 0 }],
+  ])('ignores the header for a half-admin (%s)', (_n, user) => {
+    const { request, context } = withHeader(user, 'T2');
+    expect(guard.canActivate(context)).toBe(true);
+    expect(request.tenantId).toBe('T1');
+  });
+
+  it('honors the header for a global admin', () => {
+    const { request, context } = withHeader(admin, 'T2');
+    expect(guard.canActivate(context)).toBe(true);
+    expect(request.tenantId).toBe('T2');
+  });
+
+  it('falls back to the admin’s own tenant without a header', () => {
+    const { request, context } = withHeader(admin);
+    expect(guard.canActivate(context)).toBe(true);
+    expect(request.tenantId).toBe('T0');
   });
 });

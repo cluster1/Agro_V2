@@ -1,4 +1,4 @@
-import { INestApplication, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import { INestApplication, UnauthorizedException, InternalServerErrorException, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
@@ -145,7 +145,7 @@ describe('HTTP security', () => {
     });
 
     it('401 for a token whose payload was tampered after signing', async () => {
-      const [h, , s] = personas.investorT1().split('.');
+      const [h, , s] = personas.agronomT1().split('.');
       const payload = Buffer.from(
         JSON.stringify({ sub: 'inv1', tenant_id: 'T1', user_role: 'admin', user_level: 0, exp: 9999999999 }),
       ).toString('base64url');
@@ -167,14 +167,14 @@ describe('HTTP security', () => {
 
     const srv = () => http(app);
 
-    describe.each(['investorT1', 'operatorT1'] as const)('read-only persona %s', (who) => {
+    describe.each(['agronomT1', 'operatorT1'] as const)('read-only persona %s', (who) => {
       it.each([
-        ['POST', '/tenants/T1/clusters', { site_id: 'S1', cluster_name: 'x' }],
+        ['POST', '/clusters', { site_id: 'S1', cluster_name: 'x' }],
         ['PATCH', '/clusters/C1', { cluster_name: 'x' }],
         ['DELETE', '/clusters/C1', undefined],
-        ['POST', '/tenants/T1/users', undefined],
-        ['PATCH', '/tenants/T1/users/u1', { user_name: 'x' }],
-        ['DELETE', '/tenants/T1/users/u1', undefined],
+        ['POST', '/users', undefined],
+        ['PATCH', '/users/u1', { user_name: 'x' }],
+        ['DELETE', '/users/u1', undefined],
         ['PATCH', '/tenants/T1', { tenant_name: 'x' }],
         ['DELETE', '/tenants/T1', undefined],
         ['POST', '/tenants', undefined],
@@ -190,7 +190,7 @@ describe('HTTP security', () => {
       });
 
       it('can still read their own tenant', async () => {
-        await srv().get('/tenants/T1/clusters').set(bearer(personas[who]())).expect(200);
+        await srv().get('/clusters').set(bearer(personas[who]())).expect(200);
       });
     });
 
@@ -205,9 +205,16 @@ describe('HTTP security', () => {
       await srv().delete('/clusters/C1').set(bearer(personas.tenantAdminT1())).expect(200);
     });
 
-    it('GET /users (global list) is admin-only', async () => {
-      await srv().get('/users').set(bearer(personas.tenantAdminT1())).expect(403);
+    it('GET /users lists the caller tenant; only a global admin without X-Tenant-Id gets the global list', async () => {
+      await srv().get('/users').set(bearer(personas.tenantAdminT1())).expect(200);
+      expect(m.user.findAll).toHaveBeenCalledWith('T1');
+      expect(m.user.findAllGlobal).not.toHaveBeenCalled();
+
       await srv().get('/users').set(bearer(personas.globalAdmin())).expect(200);
+      expect(m.user.findAllGlobal).toHaveBeenCalledTimes(1);
+
+      await srv().get('/users').set({ ...bearer(personas.globalAdmin()), 'x-tenant-id': 'T2' }).expect(200);
+      expect(m.user.findAll).toHaveBeenLastCalledWith('T2');
     });
 
     it('GET /tenants (all tenants) is admin-only', async () => {
@@ -218,18 +225,20 @@ describe('HTTP security', () => {
     describe.each([
       ['role admin at level 2', { user_role: 'admin', user_level: 2 }],
       ['role admin at level 1', { user_role: 'admin', user_level: 1 }],
-      ['level 0 with a non-admin role', { user_role: 'farmer', user_level: 0 }],
+      ['level 0 with a non-admin role', { user_role: 'operator', user_level: 0 }],
     ])('half-admin: %s', (_n, claims) => {
       const token = () => signAccessToken({ tenant_id: 'T1', ...claims });
 
       it('gets no global-admin endpoints', async () => {
-        await srv().get('/users').set(bearer(token())).expect(403);
+        await srv().get('/users').set({ ...bearer(token()), 'x-tenant-id': 'T2' }).expect(200);
+        expect(m.user.findAllGlobal).not.toHaveBeenCalled();
         await srv().get('/tenants').set(bearer(token())).expect(403);
         await srv().post('/tenants').set(bearer(token())).send({ tenant_name: 'x' }).expect(403);
       });
 
       it('stays confined to its own tenant', async () => {
-        await srv().get('/tenants/T2/clusters').set(bearer(token())).expect(403);
+        await srv().get('/clusters').set({ ...bearer(token()), 'x-tenant-id': 'T2' }).expect(200);
+        expect(m.cluster.findAllByTenant).toHaveBeenLastCalledWith('T1');
         await srv().get('/tenants/T2').set(bearer(token())).expect(403);
         await srv().get('/clusters/C9').set(bearer(token())).expect(200);
         expect(m.cluster.findOne).toHaveBeenCalledWith('C9', undefined, 'T1'); // scoped, not unrestricted
@@ -247,25 +256,42 @@ describe('HTTP security', () => {
     const srv = () => http(app);
 
     it.each([
-      ['GET', '/tenants/T2/clusters'],
-      ['GET', '/tenants/T2/sites/S2/clusters'],
-      ['POST', '/tenants/T2/clusters'],
-      ['GET', '/tenants/T2/users'],
-      ['POST', '/tenants/T2/users'],
-      ['PATCH', '/tenants/T2/users/u9'],
-      ['DELETE', '/tenants/T2/users/u9'],
-    ])('tenant admin of T1: %s %s -> 403', async (method, path) => {
-      await (srv() as any)[method.toLowerCase()](path).set(bearer(personas.tenantAdminT1())).send({}).expect(403);
-      expect(m.cluster.create).not.toHaveBeenCalled();
-      expect(m.cluster.findAllByTenant).not.toHaveBeenCalled();
-      expect(m.user.create).not.toHaveBeenCalled();
-      expect(m.user.update).not.toHaveBeenCalled();
-      expect(m.user.remove).not.toHaveBeenCalled();
+      ['GET', '/clusters'],
+      ['GET', '/sites/S2/clusters'],
+      ['POST', '/clusters'],
+      ['GET', '/users'],
+      ['POST', '/users'],
+    ])('tenant admin of T1: %s %s ignores X-Tenant-Id and the legacy tenant path', async (method, path) => {
+      const body = { site_id: 'S1', cluster_name: 'x', user_name: 'n', user_email: 'n@x.io', user_pass: 'a-long-enough-pass', user_role: 'operator' };
+      await (srv() as any)[method.toLowerCase()](path)
+        .set({ ...bearer(personas.tenantAdminT1()), 'x-tenant-id': 'T2' })
+        .send(body);
+      for (const fn of [m.cluster.findAllByTenant, m.user.findAll]) {
+        for (const call of fn.mock.calls) expect(call[0]).toBe('T1');
+      }
+      for (const call of m.cluster.create.mock.calls) expect(call[0]).toBe('T1');
+      for (const call of m.user.create.mock.calls) expect(call[1]).toBe('T1');
     });
 
-    it('global admin may act in any tenant', async () => {
-      await srv().get('/tenants/T2/clusters').set(bearer(personas.globalAdmin())).expect(200);
-      expect(m.cluster.findAllByTenant).toHaveBeenCalledWith('T2');
+    it('tenant paths no longer exist', async () => {
+      await srv().get('/tenants/T2/clusters').set(bearer(personas.tenantAdminT1())).expect(404);
+      await srv().get('/tenants/T2/users').set(bearer(personas.globalAdmin())).expect(404);
+    });
+
+    describe('global admin tenant selection', () => {
+      it('honors X-Tenant-Id', async () => {
+        await srv().get('/clusters').set({ ...bearer(personas.globalAdmin()), 'x-tenant-id': 'T2' }).expect(200);
+        expect(m.cluster.findAllByTenant).toHaveBeenCalledWith('T2');
+      });
+
+      it.each(['T2;DROP', 'a b', 'x'.repeat(40)])('400 for malformed X-Tenant-Id %p', async (h) => {
+        await srv().get('/clusters').set({ ...bearer(personas.globalAdmin()), 'x-tenant-id': h }).expect(400);
+      });
+
+      it("falls back to the admin's own tenant without the header", async () => {
+        await srv().get('/clusters').set(bearer(personas.globalAdmin())).expect(200);
+        expect(m.cluster.findAllByTenant).toHaveBeenCalledWith(expect.any(String));
+      });
     });
 
     it('GET /tenants/:id is limited to the caller’s own tenant', async () => {
@@ -332,9 +358,9 @@ describe('HTTP security', () => {
       expect(m.tenant.create).toHaveBeenCalledTimes(1);
     });
 
-    const validUser = { user_name: 'Nu', user_email: 'nu@x.io', user_pass: 'a-long-enough-pass', user_role: 'farmer' };
+    const validUser = { user_name: 'Nu', user_email: 'nu@x.io', user_pass: 'a-long-enough-pass', user_role: 'operator' };
     const post = (body: object, token = personas.tenantAdminT1()) =>
-      srv().post('/tenants/T1/users').set(bearer(token)).send(body);
+      srv().post('/users').set(bearer(token)).send(body);
 
     it('creates a valid user and hands the JWT identity to the service as caller', async () => {
       await post(validUser).expect(201);
@@ -367,7 +393,7 @@ describe('HTTP security', () => {
 
     it('update DTO enforces the same password and role rules', async () => {
       const patch = (body: object) =>
-        srv().patch('/tenants/T1/users/u1').set(bearer(personas.tenantAdminT1())).send(body);
+        srv().patch('/users/u1').set(bearer(personas.tenantAdminT1())).send(body);
       await patch({ user_pass: 'short' }).expect(400);
       await patch({ user_role: 'root' }).expect(400);
       await patch({ user_pass: 'a-long-enough-pass' }).expect(200);
@@ -483,8 +509,8 @@ describe('HTTP security', () => {
       process.env.NODE_ENV = env;
     });
 
-    it('does not leak internal error details in production', async () => {
-      process.env.NODE_ENV = 'production';
+    it.each(['production', 'development'])('does not leak internal error details (%s)', async (nodeEnv) => {
+      process.env.NODE_ENV = nodeEnv;
       const m = mocks();
       m.cluster.findOne.mockRejectedValue(
         Object.assign(new Error("Table 'agro_db.tm_cluster' doesn't exist (SELECT secret FROM x)"), { code: 'ER_NO_SUCH_TABLE' }),
@@ -492,8 +518,71 @@ describe('HTTP security', () => {
       const { app } = await buildApp(m);
       const res = await http(app).get('/clusters/C1').set(bearer(personas.tenantAdminT1())).expect(500);
       expect(JSON.stringify(res.body)).not.toMatch(/agro_db|tm_cluster|SELECT|ER_NO_SUCH_TABLE/);
-      expect(res.body.message).toBe('Internal server error');
+      expect(res.body).toEqual({ code: 'INTERNAL_ERROR', message: expect.any(String) });
       await app.close();
+    });
+  });
+
+  describe('uniform error format {code, message, fields}', () => {
+    let app: INestApplication;
+    let m: ReturnType<typeof mocks>;
+    beforeEach(async () => {
+      ({ app, m } = await buildApp());
+    });
+    afterEach(() => app.close());
+    const srv = () => http(app);
+
+    it('401 -> UNAUTHENTICATED', async () => {
+      const res = await srv().get('/clusters').expect(401);
+      expect(res.body).toEqual({ code: 'UNAUTHENTICATED', message: expect.any(String) });
+    });
+
+    it('403 -> FORBIDDEN', async () => {
+      const res = await srv().patch('/clusters/C1').set(bearer(personas.agronomT1())).send({ cluster_name: 'x' }).expect(403);
+      expect(res.body).toEqual({ code: 'FORBIDDEN', message: expect.any(String) });
+    });
+
+    it('404 -> NOT_FOUND, without echoing the service message', async () => {
+      m.cluster.findOne.mockRejectedValue(new NotFoundException('Cluster with ID C9 not found in secret-table'));
+      const res = await srv().get('/clusters/C9').set(bearer(personas.tenantAdminT1())).expect(404);
+      expect(res.body.code).toBe('NOT_FOUND');
+      expect(res.body.message).not.toMatch(/secret-table/);
+    });
+
+    it('409 -> CONFLICT keeps the service message', async () => {
+      m.user.create.mockRejectedValue(new ConflictException('Email sudah terdaftar'));
+      const res = await srv()
+        .post('/users')
+        .set(bearer(personas.tenantAdminT1()))
+        .send({ user_name: 'N', user_email: 'n@x.io', user_pass: 'a-long-enough-pass', user_role: 'operator' })
+        .expect(409);
+      expect(res.body).toEqual({ code: 'CONFLICT', message: 'Email sudah terdaftar' });
+    });
+
+    it('400 from a business rule -> BUSINESS_RULE', async () => {
+      m.user.update.mockRejectedValue(new BadRequestException('Status tidak bisa dikembalikan'));
+      const res = await srv().patch('/users/u1').set(bearer(personas.tenantAdminT1())).send({ user_name: 'x' }).expect(400);
+      expect(res.body).toEqual({ code: 'BUSINESS_RULE', message: 'Status tidak bisa dikembalikan' });
+    });
+
+    it('validation -> VALIDATION_ERROR with per-field Indonesian messages', async () => {
+      const res = await srv()
+        .post('/users')
+        .set(bearer(personas.tenantAdminT1()))
+        .send({ user_name: 'N', user_email: 'bukan-email', user_pass: 'short', user_role: 'operator', hacker: 1 })
+        .expect(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(res.body.fields.user_email).toEqual(['format email tidak valid']);
+      expect(res.body.fields.user_pass).toEqual(expect.arrayContaining([expect.any(String)]));
+      expect(res.body.fields.hacker).toEqual(['tidak dikenali']);
+    });
+
+    it('429 -> TOO_MANY_REQUESTS', async () => {
+      m.auth.validateUser.mockResolvedValue(null);
+      let last: any;
+      for (let i = 0; i < 6; i++) last = await srv().post('/auth/login').send({ email: 'a@b.io', password: 'x' });
+      expect(last.status).toBe(429);
+      expect(last.body.code).toBe('TOO_MANY_REQUESTS');
     });
   });
 });

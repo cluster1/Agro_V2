@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminWrite } from '../common/decorators/admin-write.decorator';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 @ApiTags('parameters')
 @ApiBearerAuth()
@@ -30,11 +31,11 @@ export class DeviceSensorController {
   constructor(private readonly deviceSensorService: DeviceSensorService) {}
 
   @AdminWrite()
-  @Post('tenants/:tenantId/devices/:devId/sensors/:sensId/parameters')
+  @Post('devices/:devId/sensors/:sensId/parameters')
   @ApiOperation({ summary: 'Create new parameter for sensor' })
   @ApiResponse({ status: 201, description: 'Parameter created successfully' })
   create(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('devId') devId: string,
     @Param('sensId') sensId: string,
     @Body() createDeviceSensorDto: CreateDeviceSensorDto,

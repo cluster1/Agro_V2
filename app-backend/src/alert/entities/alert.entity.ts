@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Cluster } from '../../cluster/entities/cluster.entity';
+import { Tenant } from '../../tenant/entities/tenant.entity';
 import { AlarmCode } from './alarm-code.entity';
 import { SensorRead } from '../../monitoring/entities/sensor-read.entity';
 
@@ -9,20 +9,33 @@ export class Alert {
   alm_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
-  alcode_id: string;
-
-  @Column({ type: 'int', nullable: true })
-  read_id: number;
+  tenant_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
-  cluster_id: string;
+  alcode_id: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  read_id: string;
 
   @Column({ type: 'datetime', nullable: true })
   alm_date: Date;
 
-  @ManyToOne(() => Cluster)
-  @JoinColumn({ name: 'cluster_id' })
-  cluster: Cluster;
+  /** 0 baru, 1 dilihat, 2 selesai */
+  @Column({ type: 'int', nullable: true, default: 0 })
+  alm_sts: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  alm_ack_user: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  alm_ack_date: Date;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  alm_note: string;
+
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id' })
+  tenant: Tenant;
 
   @ManyToOne(() => AlarmCode)
   @JoinColumn({ name: 'alcode_id' })

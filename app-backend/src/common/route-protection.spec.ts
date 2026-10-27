@@ -69,6 +69,9 @@ const PUBLIC_ROUTES = new Set(['AuthController.login', 'AuthController.refresh',
 // Authenticated routes that are writes but intentionally open to every signed-in user.
 const SELF_SERVICE_WRITES = new Set(['AuthController.changePassword']);
 
+// Writes that operators legitimately perform (field handling of alerts). Agronom stays read-only.
+const OPERATOR_WRITES = new Set(['AlertController.acknowledge']);
+
 describe('route protection (auto-discovered)', () => {
   it('discovers the application controllers', () => {
     // Guards against the discovery silently finding nothing and every test below passing vacuously.
@@ -99,7 +102,7 @@ describe('route protection (auto-discovered)', () => {
     const writes = routes.filter((r) => WRITE.includes(r.method) && !PUBLIC_ROUTES.has(r.id) && !SELF_SERVICE_WRITES.has(r.id));
 
     it('discovers write routes', () => {
-      expect(writes.length).toBeGreaterThanOrEqual(25);
+      expect(writes.length).toBeGreaterThanOrEqual(24);
     });
 
     it.each(writes.map((r) => [r.id, r] as const))('%s is role-guarded', (_id, route) => {
@@ -112,7 +115,7 @@ describe('route protection (auto-discovered)', () => {
     it('no write route allows a read-only role', () => {
       for (const route of writes) {
         const roles: string[] = Reflect.getMetadata(ROLES_KEY, route.handler) ?? Reflect.getMetadata(ROLES_KEY, route.ctrl);
-        for (const readOnly of ['investor', 'viewer', 'operator', 'farmer']) {
+        for (const readOnly of OPERATOR_WRITES.has(route.id) ? ['agronom'] : ['agronom', 'operator']) {
           expect({ route: route.id, allows: roles.includes(readOnly) }).toEqual({ route: route.id, allows: false });
         }
       }
@@ -120,20 +123,34 @@ describe('route protection (auto-discovered)', () => {
   });
 
   describe('tenant confinement', () => {
-    // Routes that carry :tenantId in the path must sit behind TenantGuard (or the global-admin-only RolesGuard).
-    const tenantPathRoutes = routes.filter((r) => {
-      const ctrlPath = String(Reflect.getMetadata(PATH_METADATA, r.ctrl) ?? '');
-      const handlerPath = String(Reflect.getMetadata(PATH_METADATA, r.handler) ?? '');
-      return `${ctrlPath}/${handlerPath}`.includes(':tenantId');
-    });
+    // Tenant now comes from the JWT (X-Tenant-Id for global admins), never the path. Every route that
+    // reads tenant data must therefore sit behind TenantGuard; only these are tenant-agnostic.
+    const TENANT_AGNOSTIC = new Set(['AuthController', 'TenantController', 'UnitController', 'WeatherController']);
+    const GLOBAL_ONLY = new Set(['ReportController.getGlobalDashboard']);
+    const tenantRoutes = routes.filter((r) => !TENANT_AGNOSTIC.has(r.ctrl.name) && !GLOBAL_ONLY.has(r.id));
 
     it('discovers tenant-scoped routes', () => {
-      expect(tenantPathRoutes.length).toBeGreaterThanOrEqual(30);
+      expect(tenantRoutes.length).toBeGreaterThanOrEqual(40);
     });
 
-    it.each(tenantPathRoutes.map((r) => [r.id, r] as const))('%s is behind TenantGuard', (_id, route) => {
+    it('no route takes :tenantId from the path', () => {
+      const withPath = routes.filter((r) => {
+        const ctrlPath = String(Reflect.getMetadata(PATH_METADATA, r.ctrl) ?? '');
+        const handlerPath = String(Reflect.getMetadata(PATH_METADATA, r.handler) ?? '');
+        return `${ctrlPath}/${handlerPath}`.includes(':tenantId');
+      });
+      expect(withPath.map((r) => r.id)).toEqual([]);
+    });
+
+    it.each(tenantRoutes.map((r) => [r.id, r] as const))('%s is behind TenantGuard', (_id, route) => {
       const names = guardsOf(route).map((g) => g.name);
       expect(names).toContain('TenantGuard');
+    });
+
+    it('global-only routes are admin-guarded', () => {
+      for (const r of routes.filter((x) => GLOBAL_ONLY.has(x.id))) {
+        expect(guardsOf(r)).toContain(RolesGuard);
+      }
     });
   });
 });

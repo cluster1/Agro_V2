@@ -2,11 +2,9 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Site } from '../site/entities/site.entity';
 import { Cluster } from '../cluster/entities/cluster.entity';
 import { Device } from '../device/entities/device.entity';
-import { Livestock } from '../livestock/entities/livestock.entity';
 import { Media } from '../media/entities/media.entity';
 import { ClusterService } from '../cluster/cluster.service';
 import { DeviceService } from '../device/device.service';
-import { LivestockService } from '../livestock/livestock.service';
 import { MediaService } from '../media/media.service';
 import { TenantRepo } from '../test-utils/fakes';
 
@@ -35,10 +33,6 @@ function world() {
     { dev_id: 'D1', tenant_id: 'T1', site_id: 'S1', cluster_id: 'C1', dev_name: 'one' },
     { dev_id: 'D2', tenant_id: 'T2', site_id: 'S2', cluster_id: 'C2', dev_name: 'two' },
   ]);
-  const livestock = add(Livestock, 'animal_id', [
-    { animal_id: 'A1', tenant_id: 'T1', site_id: 'S1', cluster_id: 'C1' },
-    { animal_id: 'A2', tenant_id: 'T2', site_id: 'S2', cluster_id: 'C2' },
-  ]);
   const media = add(Media, 'media_id', [
     { media_id: 'M1', tenant_id: 'T1', site_id: 'S1', cluster_id: 'C1' },
     { media_id: 'M2', tenant_id: 'T2', site_id: 'S2', cluster_id: 'C2' },
@@ -48,11 +42,9 @@ function world() {
     sites,
     clusters,
     devices,
-    livestock,
     media,
     cluster: new ClusterService(clusters as any),
     device: new DeviceService(devices as any),
-    livestockSvc: new LivestockService(livestock as any),
     mediaSvc: new MediaService(media as any),
   };
 }
@@ -173,53 +165,6 @@ describe('tenant isolation: DeviceService', () => {
     } as any);
     expect(created.tenant_id).toBe('T1');
     expect(created.user_id).toBe('real-user');
-  });
-});
-
-describe('tenant isolation: LivestockService', () => {
-  it('reads own animal, not another tenant’s', async () => {
-    const w = world();
-    await expect(w.livestockSvc.findOne('A1', 'T1')).resolves.toMatchObject({ animal_id: 'A1' });
-    await expect(w.livestockSvc.findOne('A2', 'T1')).rejects.toBeInstanceOf(NotFoundException);
-  });
-
-  it('lists only the caller’s animals', async () => {
-    const w = world();
-    expect((await w.livestockSvc.findAll('T1')).map((a) => a.animal_id)).toEqual(['A1']);
-  });
-
-  it('cannot update or delete another tenant’s animal', async () => {
-    const w = world();
-    await expect(w.livestockSvc.update('A2', { site_id: 'S2' } as any, 'T1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-    await expect(w.livestockSvc.remove('A2', 'T1')).rejects.toBeInstanceOf(NotFoundException);
-    expect(ids(w.livestock, 'animal_id')).toEqual(['A1', 'A2']);
-  });
-
-  it('cannot create an animal in another tenant’s site or cluster', async () => {
-    const w = world();
-    await expect(w.livestockSvc.create('T1', { site_id: 'S2', cluster_id: 'C2' } as any)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-    await expect(w.livestockSvc.create('T1', { site_id: 'S1', cluster_id: 'C2' } as any)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-    expect(w.livestock.rows).toHaveLength(2);
-  });
-
-  it('cannot move an own animal to another tenant’s cluster', async () => {
-    const w = world();
-    await expect(
-      w.livestockSvc.update('A1', { site_id: 'S2', cluster_id: 'C2' } as any, 'T1'),
-    ).rejects.toBeInstanceOf(NotFoundException);
-    expect(w.livestock.rows.find((r) => r.animal_id === 'A1').cluster_id).toBe('C1');
-  });
-
-  it('cannot change tenant_id through an update DTO', async () => {
-    const w = world();
-    await w.livestockSvc.update('A1', { tenant_id: 'T2' } as any, 'T1');
-    expect(w.livestock.rows.find((r) => r.animal_id === 'A1').tenant_id).toBe('T1');
   });
 });
 

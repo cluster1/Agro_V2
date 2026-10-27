@@ -8,6 +8,7 @@ import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminWrite } from '../common/decorators/admin-write.decorator';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 @ApiTags('devices')
 @ApiBearerAuth()
@@ -17,21 +18,21 @@ export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
   @AdminWrite()
-  @Post('tenants/:tenantId/devices')
+  @Post('devices')
   @ApiOperation({ summary: 'Create new device' })
   @ApiResponse({ status: 201, description: 'Device created successfully' })
   async create(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @CurrentUser() user: any,
     @Body() createDeviceDto: CreateDeviceDto,
   ) {
     return this.deviceService.create(tenantId, user.user_id, createDeviceDto);
   }
 
-  @Get('tenants/:tenantId/devices')
+  @Get('devices')
   @ApiOperation({ summary: 'Get all devices in tenant' })
   @ApiResponse({ status: 200, description: 'List of devices' })
-  findAll(@Param('tenantId') tenantId: string) {
+  findAll(@TenantId() tenantId: string) {
     return this.deviceService.findAll(undefined, tenantId);
   }
 
@@ -63,19 +64,12 @@ export class DeviceController {
     return this.deviceService.findOne(id, undefined, scope);
   }
 
-  @Get('tenants/:tenantId/devices/:id')
-  @ApiOperation({ summary: 'Get device by ID (with tenant)' })
-  @ApiResponse({ status: 200, description: 'Device details' })
-  findOneWithTenant(@Param('tenantId') tenantId: string, @Param('id') id: string) {
-    return this.deviceService.findOne(id, undefined, tenantId);
-  }
-
   @AdminWrite()
-  @Patch('tenants/:tenantId/devices/:id')
+  @Patch('devices/:id')
   @ApiOperation({ summary: 'Update device' })
   @ApiResponse({ status: 200, description: 'Device updated successfully' })
   update(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('id') id: string,
     @Body() updateDeviceDto: UpdateDeviceDto,
   ) {
@@ -83,10 +77,10 @@ export class DeviceController {
   }
 
   @AdminWrite()
-  @Delete('tenants/:tenantId/devices/:id')
+  @Delete('devices/:id')
   @ApiOperation({ summary: 'Delete device' })
   @ApiResponse({ status: 200, description: 'Device deleted successfully' })
-  remove(@Param('tenantId') tenantId: string, @Param('id') id: string) {
+  remove(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.deviceService.remove(id, tenantId);
   }
 }

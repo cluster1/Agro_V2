@@ -14,7 +14,7 @@ describe('isGlobalAdmin', () => {
     [{ user_role: 'admin', user_level: 1 }, false],
     [{ user_role: 'admin', user_level: 2 }, false],
     [{ user_role: 'admin' }, false],
-    [{ user_role: 'farmer', user_level: 0 }, false],
+    [{ user_role: 'operator', user_level: 0 }, false],
     [{ user_role: 'tenant_admin', user_level: 0 }, false],
     [{ user_role: 'ADMIN', user_level: 0 }, false],
     [{ user_level: 0 }, false],

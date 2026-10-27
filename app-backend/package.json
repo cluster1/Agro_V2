@@ -1,7 +1,7 @@
 {
   "name": "agro-backend",
   "version": "1.0.0",
-  "description": "Agro-Livestock Monitoring Backend API",
+  "description": "AgroTwin Backend API",
   "author": "",
   "private": true,
   "license": "MIT",

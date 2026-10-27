@@ -35,7 +35,7 @@ export const personas = {
   globalAdmin: () => signAccessToken({ sub: 'ga', tenant_id: 'T0', user_role: 'admin', user_level: 0 }),
   tenantAdminT1: () => signAccessToken({ sub: 'ta1', tenant_id: 'T1', user_role: 'tenant_admin', user_level: 1 }),
   tenantAdminT2: () => signAccessToken({ sub: 'ta2', tenant_id: 'T2', user_role: 'tenant_admin', user_level: 1 }),
-  investorT1: () => signAccessToken({ sub: 'inv1', tenant_id: 'T1', user_role: 'investor', user_level: 2 }),
+  agronomT1: () => signAccessToken({ sub: 'agr1', tenant_id: 'T1', user_role: 'agronom', user_level: 3 }),
   operatorT1: () => signAccessToken({ sub: 'op1', tenant_id: 'T1', user_role: 'operator', user_level: 2 }),
 };
 

@@ -19,9 +19,12 @@ export class TenantService {
       // Generate tenant_id with format TENANT<number>
       const tenantId = await this.generateTenantId();
       
+      const { tenant_sts, ...rest } = createTenantDto;
       const tenantData = {
         tenant_id: tenantId,
-        ...createTenantDto,
+        ...rest,
+        // DB column is varchar(2); API keeps numeric 0/1
+        tenant_sts: String(tenant_sts ?? 1),
         tenant_created: new Date(),
         tenant_update: new Date(),
       };
@@ -77,7 +80,9 @@ export class TenantService {
   async update(id: string, updateTenantDto: UpdateTenantDto): Promise<Tenant> {
     const tenant = await this.findOne(id);
     
-    Object.assign(tenant, updateTenantDto);
+    const { tenant_sts, ...rest } = updateTenantDto;
+    Object.assign(tenant, rest);
+    if (tenant_sts !== undefined) tenant.tenant_sts = String(tenant_sts);
     tenant.tenant_update = new Date();
 
     return await this.tenantRepository.save(tenant);

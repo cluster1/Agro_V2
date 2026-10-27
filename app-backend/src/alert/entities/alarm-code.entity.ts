@@ -5,9 +5,12 @@ export class AlarmCode {
   @PrimaryColumn({ type: 'varchar', length: 32 })
   alcode_id: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 128, nullable: true })
   alcode_note: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  alcode_desc: string;
+  @Column({ type: 'int', nullable: true })
+  alcode_sts: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  alcode_update: Date;
 }

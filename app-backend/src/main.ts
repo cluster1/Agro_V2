@@ -40,8 +40,8 @@ async function bootstrap() {
   const swaggerEnabled = process.env.ENABLE_SWAGGER === 'true' && !isProd;
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
-      .setTitle('Agro-Livestock Monitoring API')
-      .setDescription('API for Agro-Livestock Monitoring Platform')
+      .setTitle('AgroTwin API')
+      .setDescription('API for AgroTwin digital twin platform')
       .setVersion('1.0')
       .addBearerAuth()
       .addTag('auth', 'Authentication endpoints')

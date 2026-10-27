@@ -21,6 +21,7 @@ import { parseBoundedInt } from '../common/utils/parse-bounded-int';
 import { safeUnlinkUpload } from './media-files';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { assertUploadedFile, IMAGE_AND_VIDEO, secureFileFilter, secureStorage } from '../common/utils/secure-upload';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 500;
@@ -30,7 +31,7 @@ const parseLimit = (value: unknown) => parseBoundedInt('limit', value, DEFAULT_L
 @ApiTags('media')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, TenantGuard)
-@Controller('tenants/:tenantId/media')
+@Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
@@ -47,7 +48,7 @@ export class MediaController {
     }),
   )
   async create(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @CurrentUser() user: any,
     @Body() createMediaDto: CreateMediaDto,
     @UploadedFile() file: Express.Multer.File,
@@ -65,7 +66,7 @@ export class MediaController {
   @ApiOperation({ summary: 'Get all media in tenant' })
   @ApiResponse({ status: 200, description: 'List of media' })
   findAll(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Query('siteId') siteId?: string,
   ) {
     return this.mediaService.findAll(tenantId, siteId);
@@ -74,7 +75,7 @@ export class MediaController {
   @Get(':id')
   @ApiOperation({ summary: 'Get media by ID' })
   @ApiResponse({ status: 200, description: 'Media details' })
-  findOne(@Param('tenantId') tenantId: string, @Param('id') id: string) {
+  findOne(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.mediaService.findOne(tenantId, id);
   }
 
@@ -82,7 +83,7 @@ export class MediaController {
   @AdminWrite()
   @ApiOperation({ summary: 'Delete media' })
   @ApiResponse({ status: 200, description: 'Media deleted successfully' })
-  remove(@Param('tenantId') tenantId: string, @Param('id') id: string) {
+  remove(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.mediaService.remove(tenantId, id);
   }
 
@@ -90,7 +91,7 @@ export class MediaController {
   @ApiOperation({ summary: 'Get media by cluster ID' })
   @ApiResponse({ status: 200, description: 'List of media for cluster' })
   findByCluster(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('clusterId') clusterId: string,
     @Query('limit') limit?: number,
   ) {
@@ -101,7 +102,7 @@ export class MediaController {
   @ApiOperation({ summary: 'Get media by site ID' })
   @ApiResponse({ status: 200, description: 'List of media for site' })
   findBySite(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('siteId') siteId: string,
     @Query('limit') limit?: number,
   ) {

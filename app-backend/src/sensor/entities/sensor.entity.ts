@@ -11,11 +11,17 @@ export class Sensor {
   @PrimaryColumn({ type: 'varchar', length: 32 })
   dev_id: string;
 
-  @Column({ type: 'varchar', length: 32, nullable: true })
+  @PrimaryColumn({ type: 'varchar', length: 32 })
   tenant_id: string;
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   sens_name: string;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  sens_type: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  sens_url: string;
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   sens_location: string;

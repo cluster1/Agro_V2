@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminWrite } from '../common/decorators/admin-write.decorator';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 @ApiTags('clusters')
 @ApiBearerAuth()
@@ -15,41 +16,31 @@ import { TenantScope } from '../common/decorators/tenant-scope.decorator';
 export class ClusterController {
   constructor(private readonly clusterService: ClusterService) {}
 
-  @Post('tenants/:tenantId/clusters')
+  @Post('clusters')
   @AdminWrite()
   @ApiOperation({ summary: 'Create new cluster' })
   @ApiResponse({ status: 201, description: 'Cluster created successfully' })
   async create(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Body() createClusterDto: CreateClusterDto,
   ) {
     return this.clusterService.create(tenantId, createClusterDto);
   }
 
-  @Get('tenants/:tenantId/sites/:siteId/clusters')
+  @Get('sites/:siteId/clusters')
   @ApiOperation({ summary: 'Get all clusters in site' })
   @ApiResponse({ status: 200, description: 'List of clusters' })
   findAll(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('siteId') siteId: string,
   ) {
     return this.clusterService.findAll(siteId, tenantId);
   }
 
-  @Get('sites/:siteId/clusters')
-  @ApiOperation({ summary: 'Get all clusters in site (legacy)' })
-  @ApiResponse({ status: 200, description: 'List of clusters' })
-  findAllLegacy(
-    @Param('siteId') siteId: string,
-    @TenantScope() scope: string | undefined,
-  ) {
-    return this.clusterService.findAll(siteId, scope);
-  }
-
-  @Get('tenants/:tenantId/clusters')
+  @Get('clusters')
   @ApiOperation({ summary: 'Get all clusters in tenant' })
   @ApiResponse({ status: 200, description: 'List of all clusters in tenant' })
-  findAllByTenant(@Param('tenantId') tenantId: string) {
+  findAllByTenant(@TenantId() tenantId: string) {
     return this.clusterService.findAllByTenant(tenantId);
   }
 

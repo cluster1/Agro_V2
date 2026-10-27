@@ -18,14 +18,17 @@ export class DeviceSensor {
   @Column({ type: 'varchar', length: 32, nullable: true })
   unit_id: string;
 
-  @PrimaryColumn({ type: 'varchar', length: 32 })
+  @Column({ type: 'varchar', length: 32, nullable: true })
   sens_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
   cluster_id: string;
 
   @Column({ type: 'varchar', length: 32, nullable: true })
-  animal_id: string;
+  plant_id: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  kt_id: string;
 
   @Column({ type: 'float', nullable: true })
   dc_normal_value: number;

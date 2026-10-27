@@ -11,7 +11,7 @@ export class Cluster {
   @Column({ type: 'varchar', length: 32, nullable: true })
   tenant_id: string;
 
-  @Column({ type: 'varchar', length: 32 })
+  @Column({ type: 'varchar', length: 32, nullable: true })
   site_id: string;
 
   @Column({ type: 'varchar', length: 64 })
@@ -19,6 +19,9 @@ export class Cluster {
 
   @Column({ type: 'varchar', length: 32, nullable: true })
   cluster_type: string;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  ptype_id: string;
 
   @Column({ type: 'int', nullable: true })
   cluster_capacity: number;

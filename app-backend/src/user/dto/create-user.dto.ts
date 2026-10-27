@@ -25,15 +25,15 @@ export class CreateUserDto {
   @IsOptional()
   user_phone?: string;
 
-  @ApiProperty({ example: 'farmer', description: 'admin (global, requires user_level 0) / tenant_admin / farmer / investor / viewer / operator' })
+  @ApiProperty({ example: 'operator', description: 'admin (global, requires user_level 0) / tenant_admin / operator / agronom' })
   @IsString()
   @IsIn(USER_ROLES)
   user_role: string;
 
-  @ApiProperty({ example: 2, description: '0 = global admin, 1 = tenant admin, 2 = user' })
+  @ApiProperty({ example: 2, description: '0 = global admin, 1 = tenant admin, 2 = operator, 3 = agronom' })
   @IsInt()
   @Min(0)
-  @Max(2)
+  @Max(3)
   @IsOptional()
   user_level?: number;
 

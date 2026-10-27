@@ -126,12 +126,4 @@ export class CreateDeviceSensorDto {
   @IsOptional()
   cluster_id?: string;
 
-  @ApiProperty({ 
-    example: 'ANIMAL001',
-    description: 'Animal ID',
-    required: false
-  })
-  @IsString()
-  @IsOptional()
-  animal_id?: string;
 }

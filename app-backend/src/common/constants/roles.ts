@@ -1,16 +1,12 @@
-export const USER_ROLES = [
-  'admin',
-  'tenant_admin',
-  'farmer',
-  'investor',
-  'viewer',
-  'operator',
-] as const;
+export const USER_ROLES = ['admin', 'tenant_admin', 'operator', 'agronom'] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const GLOBAL_ADMIN_LEVEL = 0;
 export const GLOBAL_ADMIN_ROLE: UserRole = 'admin';
+
+/** Roles a tenant_admin may never mint or grant (FSD F-USER-01). */
+export const TENANT_ADMIN_FORBIDDEN_ROLES: readonly string[] = ['admin', 'tenant_admin', 'agronom'];
 
 export const BCRYPT_COST = 12;
 

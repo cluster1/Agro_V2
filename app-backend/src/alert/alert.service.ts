@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alert } from './entities/alert.entity';
 import { AlertFilterDto } from './dto/alert-filter.dto';
+import { UpdateAlertDto } from './dto/update-alert.dto';
+import { scoped } from '../common/utils/scope';
 
 @Injectable()
 export class AlertService {
@@ -16,6 +18,11 @@ export class AlertService {
       SELECT 
         tm_alarm.alm_id,
         tm_alarm.alm_date,
+        tm_alarm.alcode_id,
+        tm_alarm.alm_sts,
+        tm_alarm.alm_ack_user,
+        tm_alarm.alm_ack_date,
+        tm_alarm.alm_note,
         tr_alarm_code.alcode_note,
         tm_device.dev_name,
         tm_device.dev_id,
@@ -40,7 +47,7 @@ export class AlertService {
       LEFT JOIN tm_tenant ON tm_device.tenant_id = tm_tenant.tenant_id
       LEFT JOIN tm_cluster ON tm_cluster.cluster_id = tm_device.cluster_id
       LEFT JOIN tm_site ON tm_device.site_id = tm_site.site_id
-      WHERE tm_device.tenant_id = ?
+      WHERE tm_alarm.tenant_id = ?
     `;
 
     const params: any[] = [tenantId];
@@ -69,6 +76,16 @@ export class AlertService {
       params.push(filters.clusterId);
     }
 
+    if (filters?.status !== undefined) {
+      query += ` AND IFNULL(tm_alarm.alm_sts, 0) = ?`;
+      params.push(filters.status);
+    }
+
+    if (filters?.code) {
+      query += ` AND tm_alarm.alcode_id = ?`;
+      params.push(filters.code);
+    }
+
     if (filters?.deviceId) {
       query += ` AND tm_device.dev_id = ?`;
       params.push(filters.deviceId);
@@ -80,25 +97,40 @@ export class AlertService {
   }
 
   async findOne(id: string, scope: string | undefined): Promise<Alert> {
-    // Alert has no tenant_id: scope through its cluster or the device of its sensor reading
-    const qb = this.alertRepository
-      .createQueryBuilder('alert')
-      .leftJoinAndSelect('alert.cluster', 'cluster')
-      .leftJoinAndSelect('alert.alarmCode', 'alarmCode')
-      .leftJoinAndSelect('alert.sensorRead', 'sensorRead')
-      .where('alert.alm_id = :id', { id });
-    if (scope) {
-      qb.andWhere(
-        '(cluster.tenant_id = :tenantId OR sensorRead.dev_id IN (SELECT d.dev_id FROM tm_device d WHERE d.tenant_id = :tenantId))',
-        { tenantId: scope },
-      );
-    }
-    const alert = await qb.getOne();
+    const alert = await this.alertRepository.findOne({
+      where: scoped({ alm_id: id }, scope),
+      relations: ['alarmCode', 'sensorRead'],
+    });
 
     if (!alert) {
       throw new NotFoundException(`Alert with ID ${id} not found`);
     }
 
     return alert;
+  }
+
+  /** Marks an alert as seen (1) or resolved (2); status only moves forward. */
+  async acknowledge(
+    id: string,
+    scope: string | undefined,
+    userId: string,
+    dto: UpdateAlertDto,
+  ): Promise<Alert> {
+    const alert = await this.findOne(id, scope);
+    const current = alert.alm_sts ?? 0;
+
+    if (current === 2) {
+      throw new BadRequestException('Alert sudah selesai ditangani');
+    }
+    if (dto.alm_sts < current) {
+      throw new BadRequestException('Status alert tidak bisa dikembalikan');
+    }
+
+    alert.alm_sts = dto.alm_sts;
+    alert.alm_ack_user = userId;
+    alert.alm_ack_date = new Date();
+    if (dto.alm_note !== undefined) alert.alm_note = dto.alm_note;
+
+    return this.alertRepository.save(alert);
   }
 }

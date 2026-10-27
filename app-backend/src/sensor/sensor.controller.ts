@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { AdminWrite } from '../common/decorators/admin-write.decorator';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 @ApiTags('sensors')
 @ApiBearerAuth()
@@ -16,34 +17,24 @@ export class SensorController {
   constructor(private readonly sensorService: SensorService) {}
 
   @AdminWrite()
-  @Post('tenants/:tenantId/sensors')
+  @Post('sensors')
   @ApiOperation({ summary: 'Create new sensor' })
   @ApiResponse({ status: 201, description: 'Sensor created successfully' })
   create(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Body() createSensorDto: CreateSensorDto,
   ) {
     return this.sensorService.create(tenantId, createSensorDto);
   }
 
-  @Get('tenants/:tenantId/devices/:deviceId/sensors')
+  @Get('devices/:deviceId/sensors')
   @ApiOperation({ summary: 'Get all sensors for device' })
   @ApiResponse({ status: 200, description: 'List of sensors' })
   findAll(
-    @Param('tenantId') tenantId: string,
+    @TenantId() tenantId: string,
     @Param('deviceId') deviceId: string,
   ) {
     return this.sensorService.findAll(deviceId, tenantId);
-  }
-
-  @Get('devices/:deviceId/sensors')
-  @ApiOperation({ summary: 'Get all sensors for device (legacy)' })
-  @ApiResponse({ status: 200, description: 'List of sensors' })
-  findAllLegacy(
-    @Param('deviceId') deviceId: string,
-    @TenantScope() scope: string | undefined,
-  ) {
-    return this.sensorService.findAll(deviceId, scope);
   }
 
   @Get('devices/:deviceId/sensors/:id')

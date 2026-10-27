@@ -31,8 +31,8 @@ const tenantAdminT1: Caller = { user_id: 'ta1', tenant_id: 'T1', user_role: 'ten
 const seed = () => [
   { user_id: 'ga', tenant_id: 'T0', user_name: 'GA', user_email: 'ga@x', user_role: 'admin', user_level: 0 },
   { user_id: 'ta1', tenant_id: 'T1', user_name: 'TA1', user_email: 'ta1@x', user_role: 'tenant_admin', user_level: 1 },
-  { user_id: 'f1', tenant_id: 'T1', user_name: 'F1', user_email: 'f1@x', user_role: 'farmer', user_level: 2 },
-  { user_id: 'f2', tenant_id: 'T2', user_name: 'F2', user_email: 'f2@x', user_role: 'farmer', user_level: 2 },
+  { user_id: 'f1', tenant_id: 'T1', user_name: 'F1', user_email: 'f1@x', user_role: 'operator', user_level: 2 },
+  { user_id: 'f2', tenant_id: 'T2', user_name: 'F2', user_email: 'f2@x', user_role: 'operator', user_level: 2 },
   // a global admin that happens to live inside tenant T1
   { user_id: 'ga-in-t1', tenant_id: 'T1', user_name: 'GA1', user_email: 'ga1@x', user_role: 'admin', user_level: 0 },
 ];
@@ -55,7 +55,7 @@ const newUser = (extra: Row = {}) => ({
   user_name: 'New',
   user_email: 'new@x',
   user_pass: 'a-long-enough-password',
-  user_role: 'farmer',
+  user_role: 'operator',
   ...extra,
 });
 
@@ -116,6 +116,30 @@ describe('UserService privilege rules', () => {
       expect(repo.rows.find((r) => r.user_id === 'f2').user_pass).toBeUndefined();
     });
 
+    it.each(['admin', 'tenant_admin', 'agronom'])(
+      'blocks a tenant admin from creating a %s',
+      async (role) => {
+        const { service, repo } = setup();
+        await expect(
+          service.create(tenantAdminT1, 'T1', newUser({ user_role: role, user_level: role === 'admin' ? 0 : 3 }) as any),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+        expect(repo.rows.find((r) => r.user_email === 'new@x')).toBeUndefined();
+      },
+    );
+
+    it('lets a global admin create an agronom (level 3)', async () => {
+      const { service, repo } = setup();
+      await service.create(globalAdmin, 'T1', newUser({ user_role: 'agronom', user_level: 3 }) as any);
+      expect(repo.rows.find((r) => r.user_email === 'new@x').user_role).toBe('agronom');
+    });
+
+    it('blocks a tenant admin from promoting an operator to agronom', async () => {
+      const { service } = setup();
+      await expect(
+        service.update(tenantAdminT1, 'T1', 'f1', { user_role: 'agronom' } as any),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
     it.each([
       ['promote to global admin by level', { user_level: 0 }],
       ['promote to admin by role', { user_role: 'admin' }],
@@ -137,7 +161,7 @@ describe('UserService privilege rules', () => {
     it("blocks changing one's own role or level", async () => {
       const { service } = setup();
       await expect(
-        service.update(tenantAdminT1, 'T1', 'ta1', { user_role: 'farmer' } as any),
+        service.update(tenantAdminT1, 'T1', 'ta1', { user_role: 'operator' } as any),
       ).rejects.toBeInstanceOf(ForbiddenException);
       await expect(
         service.update(tenantAdminT1, 'T1', 'ta1', { user_level: 2 } as any),
@@ -200,7 +224,7 @@ describe('UserService privilege rules', () => {
     it.each([
       ['role admin without level 0', { user_role: 'admin', user_level: 2 }],
       ['role admin with no level', { user_role: 'admin' }],
-      ['level 0 with a non-admin role', { user_role: 'farmer', user_level: 0 }],
+      ['level 0 with a non-admin role', { user_role: 'operator', user_level: 0 }],
     ])('a global admin cannot create %s', async (_n, extra) => {
       const { service, repo } = setup();
       const before = repo.rows.length;

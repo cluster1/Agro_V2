@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsDateString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsDateString, IsInt, IsIn, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AlertFilterDto {
@@ -16,6 +17,19 @@ export class AlertFilterDto {
   @IsOptional()
   @IsString()
   deviceId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by handling status: 0 baru, 1 dilihat, 2 selesai', enum: [0, 1, 2] })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsIn([0, 1, 2])
+  status?: number;
+
+  @ApiPropertyOptional({ description: 'Filter by alarm code (e.g. ALARM-HIGH)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  code?: string;
 
   @ApiPropertyOptional({ description: 'Filter by alarm start date (YYYY-MM-DD)' })
   @IsOptional()

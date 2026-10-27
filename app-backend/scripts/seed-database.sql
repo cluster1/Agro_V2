@@ -116,16 +116,6 @@ VALUES
 ('ALARM-DEVICE-OFFLINE', 'Device offline', 1, NOW());
 
 -- ============================================================
--- INSERT LIVESTOCK DEMO DATA
--- ============================================================
-
-INSERT INTO tm_livestock (animal_id, tenant_id, site_id, cluster_id, animal_tag, animal_species, animal_breed, animal_gender, animal_birthdate, animal_status)
-VALUES 
-('ANIMAL-001', 'TENANT-DEMO-001', 'SITE-002', 'CLUSTER-003', 'TAG-001', 'Ayam', 'Leghorn', 'F', '2024-01-15', 'aktif'),
-('ANIMAL-002', 'TENANT-DEMO-001', 'SITE-002', 'CLUSTER-003', 'TAG-002', 'Ayam', 'Leghorn', 'F', '2024-01-15', 'aktif'),
-('ANIMAL-003', 'TENANT-DEMO-001', 'SITE-002', 'CLUSTER-004', 'TAG-003', 'Ayam', 'Broiler', 'M', '2024-03-01', 'aktif');
-
--- ============================================================
 -- VERIFICATION QUERIES
 -- ============================================================
 
@@ -144,9 +134,7 @@ SELECT 'Sensors', COUNT(*) FROM td_sensor
 UNION ALL
 SELECT 'Units', COUNT(*) FROM tr_unit
 UNION ALL
-SELECT 'Alarm Codes', COUNT(*) FROM tr_alarm_code
-UNION ALL
-SELECT 'Livestock', COUNT(*) FROM tm_livestock;
+SELECT 'Alarm Codes', COUNT(*) FROM tr_alarm_code;
 
 -- Show hierarchy
 SELECT 

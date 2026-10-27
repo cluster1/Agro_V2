@@ -13,7 +13,13 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RefreshToken } from '../auth/entities/refresh-token.entity';
-import { BCRYPT_COST, GLOBAL_ADMIN_LEVEL, GLOBAL_ADMIN_ROLE, isGlobalAdmin } from '../common/constants/roles';
+import {
+  BCRYPT_COST,
+  GLOBAL_ADMIN_LEVEL,
+  GLOBAL_ADMIN_ROLE,
+  TENANT_ADMIN_FORBIDDEN_ROLES,
+  isGlobalAdmin,
+} from '../common/constants/roles';
 
 export interface Caller {
   user_id: string;
@@ -49,10 +55,19 @@ export class UserService {
   private assertCanAssignPrivileges(
     caller: Caller,
     dto: { user_role?: string; user_level?: number },
+    currentRole?: string,
   ): void {
     if (isGlobalAdmin(caller)) return;
     if (dto.user_level === GLOBAL_ADMIN_LEVEL || dto.user_role === GLOBAL_ADMIN_ROLE) {
       throw new ForbiddenException('Cannot assign global admin privileges');
+    }
+    // tenant_admin may only create/assign operators; re-sending an unchanged role is not an assignment.
+    if (
+      dto.user_role !== undefined &&
+      dto.user_role !== currentRole &&
+      TENANT_ADMIN_FORBIDDEN_ROLES.includes(dto.user_role)
+    ) {
+      throw new ForbiddenException(`Cannot assign role '${dto.user_role}'`);
     }
   }
 
@@ -155,7 +170,7 @@ export class UserService {
       : await this.findOne(tenantId, id);
 
     if (!isGlobalAdmin(caller)) {
-      this.assertCanAssignPrivileges(caller, updateUserDto);
+      this.assertCanAssignPrivileges(caller, updateUserDto, user.user_role);
       if (isGlobalAdmin(user)) {
         throw new ForbiddenException('Cannot modify a global admin');
       }
