@@ -70,7 +70,13 @@ export class ObservationService {
     return `${plantId}_OBS${max + 1}`;
   }
 
-  async create(tenantId: string, userId: string, dto: CreateObservationDto): Promise<Observation> {
+  /** `dryRun` runs every rule and returns the would-be row without writing (used by import preview). */
+  async create(
+    tenantId: string,
+    userId: string,
+    dto: CreateObservationDto,
+    opts: { source?: string; dryRun?: boolean } = {},
+  ): Promise<Observation> {
     const plant = await assertOwned(this.manager, Plant, { plant_id: dto.plant_id, tenant_id: tenantId }, 'Tanaman');
     if (plant.plant_sts === 0) throw new BadRequestException('Musim tanaman sudah ditutup');
 
@@ -104,11 +110,13 @@ export class ObservationService {
       ...Object.fromEntries(MEASURE_FIELDS.map((f) => [f, dto[f]])),
       obs_symptom: symptom,
       obs_desc: dto.obs_desc,
-      obs_source: 'WEB',
+      obs_source: opts.source ?? 'WEB',
       obs_sts: dto.draft ? OBSERVATION_STATUS.DRAFT : OBSERVATION_STATUS.SAVED,
       obs_created: now,
       obs_update: now,
     });
+
+    if (opts.dryRun) return row;
 
     await this.manager.transaction(async (em) => {
       await em.insert(Observation, row);

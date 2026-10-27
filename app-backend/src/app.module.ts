@@ -23,6 +23,7 @@ import { ActivityModule } from './activity/activity.module';
 import { ObservationModule } from './observation/observation.module';
 import { HarvestModule } from './harvest/harvest.module';
 import { SoilModule } from './soil/soil.module';
+import { ImportsModule } from './imports/imports.module';
 import { WeatherModule } from './weather/weather.module';
 
 @Module({
@@ -78,6 +79,7 @@ import { WeatherModule } from './weather/weather.module';
     ObservationModule,
     HarvestModule,
     SoilModule,
+    ImportsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

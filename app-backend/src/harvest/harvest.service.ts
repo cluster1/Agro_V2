@@ -41,7 +41,13 @@ export class HarvestService {
     return `${plantId}_HV${max + 1}`;
   }
 
-  async create(tenantId: string, userId: string, dto: CreateHarvestDto): Promise<Harvest> {
+  /** `dryRun` runs every rule and returns the would-be row without writing (used by import preview). */
+  async create(
+    tenantId: string,
+    userId: string,
+    dto: CreateHarvestDto,
+    opts: { source?: string; dryRun?: boolean } = {},
+  ): Promise<Harvest> {
     const plant = await assertOwned(this.manager, Plant, { plant_id: dto.plant_id, tenant_id: tenantId }, 'Tanaman');
     this.assertDate(plant, dto.hv_date);
 
@@ -77,13 +83,13 @@ export class HarvestService {
       ...computeHarvest(dto.hv_weight, dto.hv_moisture, area),
       hv_loss_pct: dto.hv_loss_pct,
       hv_price: dto.hv_price,
-      hv_source: 'WEB',
+      hv_source: opts.source ?? 'WEB',
       hv_desc: dto.hv_desc,
       hv_sts: 1,
       hv_created: now,
       hv_update: now,
     });
-    await this.harvests.insert(row);
+    if (!opts.dryRun) await this.harvests.insert(row);
     return row;
   }
 
