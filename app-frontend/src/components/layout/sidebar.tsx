@@ -28,6 +28,7 @@ import {
   CalendarClock,
   ClipboardCheck,
   Eye,
+  Wheat,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -77,6 +78,7 @@ const navigation: NavItem[] = [
       { name: 'Jadwal', href: '/schedules', icon: CalendarClock, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Kegiatan', href: '/activities', icon: ClipboardCheck, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Observasi', href: '/observations', icon: Eye, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+      { name: 'Panen', href: '/harvests', icon: Wheat, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
     ]
   },
   {
