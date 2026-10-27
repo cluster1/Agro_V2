@@ -97,3 +97,17 @@ export function canVerifyObservations(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
 }
+
+/**
+ * Check if user can add/edit/delete soil profiles (Environment > Profil Tanah).
+ * Admin dan Tenant Admin penuh; Agronom hanya lihat; Operator tidak melihat menu (BRD matriks menu).
+ */
+export function canManageSoil(user: User | null): boolean {
+  if (!user) return false
+  return user.user_role === 'admin' || user.user_role === 'tenant_admin'
+}
+
+export function canViewSoil(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
+}

@@ -29,6 +29,7 @@ import {
   ClipboardCheck,
   Eye,
   Wheat,
+  FlaskConical,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -84,10 +85,11 @@ const navigation: NavItem[] = [
   {
     name: 'Environment',
     icon: Layers,
-    roles: ['admin', 'tenant_admin'],
+    roles: ['admin', 'tenant_admin', 'agronom'],
     children: [
       { name: 'Sites & Cluster', href: '/sites', icon: MapPin, roles: ['admin', 'tenant_admin'] },
       { name: 'Device & Sensor', href: '/devices', icon: Radio, roles: ['admin', 'tenant_admin'] },
+      { name: 'Profil Tanah', href: '/soil', icon: FlaskConical, roles: ['admin', 'tenant_admin', 'agronom'] },
     ]
   },
   {

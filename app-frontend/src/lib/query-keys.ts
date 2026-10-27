@@ -22,6 +22,7 @@ export const queryKeys = {
   activities: (tenantId: Id) => ['activities', tenantId] as const,
   observations: (tenantId: Id) => ['observations', tenantId] as const,
   harvests: (tenantId: Id) => ['harvests', tenantId] as const,
+  soilProfiles: (tenantId: Id) => ['soil-profiles', tenantId] as const,
   /** Global reference data (not tenant scoped). */
   ref: (resource: string, ...filters: Id[]) => ['ref', resource, ...filters] as const,
 }
