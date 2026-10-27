@@ -277,3 +277,46 @@ export function compareTruth(
     model: [modelPhase.name, modelBwd !== null ? `BWD ${modelBwd}` : null].filter(Boolean).join(', '),
   }
 }
+
+/**
+ * Tinggi (cm) atau anakan pada umur tertentu untuk model 3D. Sampai observasi terakhir: interpolasi
+ * linier antar observasi (dari 0 saat tanam). Sesudahnya: nilai observasi terakhir mengikuti bentuk
+ * kurva acuan (proyeksi). Tanpa observasi: kurva acuan.
+ */
+export function valueAtAge(twin: PlantTwin, field: 'height' | 'tiller', age: number): number | null {
+  const ref = field === 'height' ? twin.reference.height : twin.reference.tiller
+  const pts: AgePoint[] = twin.observations
+    .filter((o) => o.age !== null && o.age >= 0 && o[field] !== null)
+    .map((o) => ({ age: o.age as number, value: o[field] as number }))
+    .sort((a, b) => a.age - b.age)
+  if (!pts.length) return interpolate(ref, age)
+  const last = pts[pts.length - 1]
+  if (age <= last.age) return interpolate(pts, age)
+  const refLast = interpolate(ref, last.age)
+  const refNow = interpolate(ref, age)
+  if (refLast === null || refNow === null || refLast <= 0) return last.value
+  return last.value * (refNow / refLast)
+}
+
+/** Warna malai/gabah menurut urutan fase: hijau saat berbunga, kuning, lalu oranye saat masak. */
+export function grainColor(phaseSeq: number | null): string {
+  if (phaseSeq === null || phaseSeq < 7) return '#9CCC65'
+  if (phaseSeq === 7) return '#C5E1A5'
+  if (phaseSeq === 8) return '#FDD835'
+  if (phaseSeq === 9) return '#F9A825'
+  return '#EF6C00'
+}
+
+/** Sawah tergenang sampai pengeringan (awal masak kuning, fase 9). */
+export const hasWater = (phaseSeq: number | null): boolean => phaseSeq === null || phaseSeq < 9
+
+/** WebGL tersedia di browser ini? (tanpa itu model 3D diganti peta 2D) */
+export function webglSupported(): boolean {
+  if (typeof document === 'undefined') return false
+  try {
+    const canvas = document.createElement('canvas')
+    return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'))
+  } catch {
+    return false
+  }
+}

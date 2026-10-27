@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -20,11 +21,17 @@ import { useAuthStore } from '@/stores/auth-store'
 import { canRunSimulation } from '@/lib/permissions'
 import { queryKeys } from '@/lib/query-keys'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, type PlantTwin, type SitePlant } from '@/lib/twin'
+import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, type PlantTwin, type SitePlant } from '@/lib/twin'
 import { PlotMap, type ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
+
+// three.js is heavy and needs the browser: load it only when the 3D view is shown
+const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
+  ssr: false,
+  loading: () => <div className="aspect-[4/3] w-full rounded-lg bg-muted motion-safe:animate-pulse" role="status" aria-label="Memuat model 3D" />,
+})
 
 const SCENARIOS = [
   { value: 'BASE', label: 'Dasar' },
@@ -45,6 +52,12 @@ export default function TwinPage() {
   const [follow, setFollow] = useState(true)
   const [mediaId, setMediaId] = useState<string | null>(null)
   const [scenario, setScenario] = useState('BASE')
+  const [view, setView] = useState<'3d' | '2d'>('3d')
+  const [gl, setGl] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    setGl(webglSupported())
+  }, [])
 
   const sitePlants = useQuery({
     queryKey: queryKeys.twin(activeTenantId),
@@ -94,6 +107,9 @@ export default function TwinPage() {
   const age = twin?.plant.plant_date && shownDay ? daysBetween(twin.plant.plant_date, shownDay) : null
   const phaseAtDay = twin && shownDay ? phaseOnDay(timeline, shownDay) : undefined
   const bwd = twin && shownDay ? bwdAt(twin.observations, shownDay) : null
+  const show3d = view === '3d' && gl === true
+  const heightNow = twin && age !== null ? valueAtAge(twin, 'height', age) ?? 0 : 0
+  const tillerNow = twin && age !== null ? valueAtAge(twin, 'tiller', age) ?? 1 : 1
   const markers = useMemo(() => (twin?.media ?? []).map((m) => (m.date ?? '').slice(0, 10)).filter(Boolean), [twin])
 
   const onSelectMedia = (id: string) => {
@@ -237,18 +253,51 @@ export default function TwinPage() {
                 )}
                 {twin.simulation?.note && <p className="text-sm text-muted-foreground">Catatan model: {twin.simulation.note}</p>}
 
-                <PlotMap
-                  plants={sitePlants.data ?? []}
-                  selectedId={twin.plant.plant_id}
-                  mode={mode}
-                  phaseColor={phaseAtDay?.color ?? twin.now.phase?.color ?? null}
-                  bwd={bwd}
-                  bwdMin={twin.reference.bwd_min}
-                  media={twin.media}
-                  selectedMediaId={mediaId}
-                  onSelectPlant={selectPlant}
-                  onSelectMedia={onSelectMedia}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex gap-1" role="group" aria-label="Tampilan petak">
+                    <Button type="button" size="sm" variant={view === '3d' ? 'default' : 'outline'} aria-pressed={view === '3d'} onClick={() => setView('3d')}>
+                      3D
+                    </Button>
+                    <Button type="button" size="sm" variant={view === '2d' ? 'default' : 'outline'} aria-pressed={view === '2d'} onClick={() => setView('2d')}>
+                      Peta 2D
+                    </Button>
+                  </div>
+                  {view === '3d' && gl === false && (
+                    <p role="status" className="text-sm text-muted-foreground">
+                      Browser ini tidak mendukung WebGL, jadi model 3D diganti peta 2D.
+                    </p>
+                  )}
+                </div>
+
+                {show3d ? (
+                  <Plot3D
+                    heightCm={heightNow}
+                    tillers={tillerNow}
+                    bwd={bwd}
+                    bwdMin={twin.reference.bwd_min}
+                    mode={mode}
+                    phaseSeq={phaseAtDay ? phaseAtDay.seq : twin.now.phase?.seq ?? null}
+                    geom={twin.plant.geom}
+                    media={twin.media}
+                    selectedMediaId={mediaId}
+                    sensors={twin.sensors}
+                    onSelectMedia={onSelectMedia}
+                    label={`Model 3D petak ${twin.plant.name ?? twin.plant.plant_id}, tinggi ${Math.round(heightNow)} sentimeter`}
+                  />
+                ) : (
+                  <PlotMap
+                    plants={sitePlants.data ?? []}
+                    selectedId={twin.plant.plant_id}
+                    mode={mode}
+                    phaseColor={phaseAtDay?.color ?? twin.now.phase?.color ?? null}
+                    bwd={bwd}
+                    bwdMin={twin.reference.bwd_min}
+                    media={twin.media}
+                    selectedMediaId={mediaId}
+                    onSelectPlant={selectPlant}
+                    onSelectMedia={onSelectMedia}
+                  />
+                )}
 
                 <TimeSlider
                   start={range.start}

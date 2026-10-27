@@ -129,3 +129,17 @@ export function canRunSimulation(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
 }
+
+/**
+ * Calibration page (Analisis > Kalibrasi Model): admin dan agronom saja (BRD matriks menu).
+ */
+export function canCalibrate(user: User | null): boolean {
+  if (!user) return false
+  return user.user_role === 'admin' || user.user_role === 'agronom'
+}
+
+/** Report Akurasi Model: admin, tenant admin dan agronom. */
+export function canViewAccuracy(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
+}

@@ -33,6 +33,8 @@ import {
   Database,
   Upload,
   Boxes,
+  SlidersHorizontal,
+  Target,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -85,6 +87,15 @@ const navigation: NavItem[] = [
       { name: 'Observasi', href: '/observations', icon: Eye, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Panen', href: '/harvests', icon: Wheat, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Impor Data', href: '/imports', icon: Upload, roles: ['admin', 'tenant_admin', 'agronom'] },
+    ]
+  },
+  {
+    name: 'Analisis',
+    icon: LineChart,
+    roles: ['admin', 'tenant_admin', 'agronom'],
+    children: [
+      { name: 'Kalibrasi Model', href: '/calibration', icon: SlidersHorizontal, roles: ['admin', 'agronom'] },
+      { name: 'Akurasi Model', href: '/model-accuracy', icon: Target, roles: ['admin', 'tenant_admin', 'agronom'] },
     ]
   },
   {
