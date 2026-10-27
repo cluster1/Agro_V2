@@ -89,6 +89,7 @@ const AGRONOM_WRITES = new Set([
   'ScheduleController.remove',
   'ObservationController.verify', // agronom verifies observations
   'ObservationController.reject',
+  'CalibrationController.apply', // agronom calibrates varieties
   'ModelController.simulate', // tenant admin and agronom run the model
   'ImportsController.preview', // agronom imports data (BRD matrix); operators cannot
   'ImportsController.commit',

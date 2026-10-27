@@ -331,6 +331,23 @@ export class ModelService {
     };
   }
 
+  /**
+   * GDD accumulated from planting up to (not including) `day` for a plant, using actual weather and
+   * the climate normal where actual data is missing. Null when the weather series has a gap.
+   */
+  async gddUntil(plant: Plant, variety: PlantVariety, day: string): Promise<number | null> {
+    if (!plant.plant_date || !plant.plant_sow_date) return null;
+    const { weatherFor } = await this.weatherSource(plant, plant.plant_sow_date, 'BASE', today());
+    let sum = 0;
+    const days = daysBetween(plant.plant_date, day);
+    for (let d = 0; d < days; d++) {
+      const w = weatherFor(addDays(plant.plant_date, d));
+      if (!w) return null;
+      sum += dailyGdd(w.tmin, w.tmax, variety.var_tbase ?? 10, variety.var_tmax ?? 42);
+    }
+    return round(sum, 0);
+  }
+
   /** Never lets a model failure break the caller (observation verification, weekly job). */
   async simulateSafely(plantId: string, userId: string | null, scenario: Scenario = 'BASE', note?: string): Promise<boolean> {
     try {
