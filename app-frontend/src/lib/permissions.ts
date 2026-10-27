@@ -90,6 +90,15 @@ export function canRecordActivities(user: User | null): boolean {
 }
 
 /**
+ * Check if user can import data (Budidaya > Impor Data).
+ * Admin, Tenant Admin dan Agronom; Operator tidak melihat menu (BRD matriks menu).
+ */
+export function canImportData(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
+}
+
+/**
  * Check if user can verify or reject saved observations (Budidaya > Observasi).
  * Agronom memverifikasi; Admin dan Tenant Admin penuh; Operator hanya input (BRD matriks menu).
  */
