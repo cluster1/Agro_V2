@@ -24,6 +24,7 @@ import { ObservationModule } from './observation/observation.module';
 import { HarvestModule } from './harvest/harvest.module';
 import { SoilModule } from './soil/soil.module';
 import { ImportsModule } from './imports/imports.module';
+import { ModelModule } from './model/model.module';
 import { WeatherModule } from './weather/weather.module';
 
 @Module({
@@ -80,6 +81,7 @@ import { WeatherModule } from './weather/weather.module';
     HarvestModule,
     SoilModule,
     ImportsModule,
+    ModelModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

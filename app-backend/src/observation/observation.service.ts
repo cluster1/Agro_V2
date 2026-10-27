@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, IsNull, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Observation, OBSERVATION_STATUS } from './entities/observation.entity';
@@ -13,6 +13,7 @@ import { escapeRegExp } from '../common/utils/escape-regexp';
 import { scoped } from '../common/utils/scope';
 import { daysBetween, phaseForAge } from '../plant/plant-rules';
 import { normalizeDateTime } from '../schedule/schedule.service';
+import { ModelService } from '../model/model.service';
 import { stripRejection, validateMeasurements, withRejection } from './observation-rules';
 
 const RICE_PTYPE = 'PT-PADI';
@@ -39,6 +40,8 @@ export class ObservationService {
   constructor(
     @InjectRepository(Observation)
     private readonly observations: Repository<Observation>,
+    // optional so the service stays usable (and testable) without the model module
+    @Optional() private readonly model?: ModelService,
   ) {}
 
   private get manager() {
@@ -180,7 +183,20 @@ export class ObservationService {
     }
     row.obs_sts = OBSERVATION_STATUS.VERIFIED;
     row.obs_update = new Date();
-    return this.observations.save(row);
+    const saved = await this.observations.save(row);
+
+    // A verified observation refreshes the twin: stamp the phase actually reached (F-MDL-08), then re-run BASE.
+    if (this.model) {
+      const d = row.obs_date;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      // DB datetimes are local Dates; format locally so the day does not shift across UTC
+      const day = d instanceof Date ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : String(d).slice(0, 10);
+      if (row.phase_id && (row.obs_phase_pct ?? 0) >= 50) {
+        await this.model.recordPhaseActual(row.plant_id, row.phase_id, day).catch(() => undefined);
+      }
+      await this.model.simulateSafely(row.plant_id, null, 'BASE', 'Observasi diverifikasi');
+    }
+    return saved;
   }
 
   async reject(id: string, scope: string | undefined, reason: string): Promise<Observation> {
