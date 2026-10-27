@@ -69,8 +69,9 @@ const PUBLIC_ROUTES = new Set(['AuthController.login', 'AuthController.refresh',
 // Authenticated routes that are writes but intentionally open to every signed-in user.
 const SELF_SERVICE_WRITES = new Set(['AuthController.changePassword']);
 
-// Writes that operators legitimately perform (field handling of alerts). Agronom stays read-only.
-const OPERATOR_WRITES = new Set(['AlertController.acknowledge']);
+// Roles that may legitimately write where the BRD menu matrix says so; everyone else stays read-only.
+const OPERATOR_WRITES = new Set(['AlertController.acknowledge']); // field handling of alerts
+const AGRONOM_WRITES = new Set(['ScheduleController.create', 'ScheduleController.update', 'ScheduleController.remove']);
 
 describe('route protection (auto-discovered)', () => {
   it('discovers the application controllers', () => {
@@ -115,7 +116,10 @@ describe('route protection (auto-discovered)', () => {
     it('no write route allows a read-only role', () => {
       for (const route of writes) {
         const roles: string[] = Reflect.getMetadata(ROLES_KEY, route.handler) ?? Reflect.getMetadata(ROLES_KEY, route.ctrl);
-        for (const readOnly of OPERATOR_WRITES.has(route.id) ? ['agronom'] : ['agronom', 'operator']) {
+        const readOnlyRoles = ['agronom', 'operator'].filter(
+          (r) => !(r === 'operator' && OPERATOR_WRITES.has(route.id)) && !(r === 'agronom' && AGRONOM_WRITES.has(route.id)),
+        );
+        for (const readOnly of readOnlyRoles) {
           expect({ route: route.id, allows: roles.includes(readOnly) }).toEqual({ route: route.id, allows: false });
         }
       }
@@ -125,7 +129,7 @@ describe('route protection (auto-discovered)', () => {
   describe('tenant confinement', () => {
     // Tenant now comes from the JWT (X-Tenant-Id for global admins), never the path. Every route that
     // reads tenant data must therefore sit behind TenantGuard; only these are tenant-agnostic.
-    const TENANT_AGNOSTIC = new Set(['AuthController', 'TenantController', 'UnitController', 'WeatherController']);
+    const TENANT_AGNOSTIC = new Set(['AuthController', 'TenantController', 'UnitController', 'WeatherController', 'RefController']);
     const GLOBAL_ONLY = new Set(['ReportController.getGlobalDashboard']);
     const tenantRoutes = routes.filter((r) => !TENANT_AGNOSTIC.has(r.ctrl.name) && !GLOBAL_ONLY.has(r.id));
 

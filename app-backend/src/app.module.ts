@@ -16,6 +16,9 @@ import { UnitModule } from './unit/unit.module';
 import { MediaModule } from './media/media.module';
 import { ReportModule } from './report/report.module';
 import { AlertModule } from './alert/alert.module';
+import { RefModule } from './ref/ref.module';
+import { PlantModule } from './plant/plant.module';
+import { ScheduleModule } from './schedule/schedule.module';
 import { WeatherModule } from './weather/weather.module';
 
 @Module({
@@ -64,6 +67,9 @@ import { WeatherModule } from './weather/weather.module';
     ReportModule,
     AlertModule,
     WeatherModule,
+    RefModule,
+    PlantModule,
+    ScheduleModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
