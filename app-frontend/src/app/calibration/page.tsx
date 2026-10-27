@@ -62,13 +62,12 @@ export default function CalibrationPage() {
     enabled: allowed && !!varId && !!activeTenantId,
   })
 
-  const phases = report.data?.phases ?? []
-  const proposals = useMemo(() => phases.filter((p) => p.proposal), [phases])
+  const phases = useMemo(() => report.data?.phases ?? [], [report.data])
 
   // pre-select every phase that has a proposal whenever the report changes
   useEffect(() => {
-    setPicked(new Set(proposals.map((p) => p.phase_id)))
-  }, [proposals])
+    setPicked(new Set((report.data?.phases ?? []).filter((p) => p.proposal).map((p) => p.phase_id)))
+  }, [report.data])
 
   const apply = useMutation({
     mutationFn: async () => (await api.post(`/calibration/varieties/${varId}/apply`, { phase_ids: [...picked] })).data as ApplyResult,
