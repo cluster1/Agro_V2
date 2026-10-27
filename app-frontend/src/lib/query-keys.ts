@@ -19,6 +19,7 @@ export const queryKeys = {
   sensors: (tenantId: Id) => ['sensors', tenantId] as const,
   plants: (tenantId: Id) => ['plants', tenantId] as const,
   schedules: (tenantId: Id) => ['schedules', tenantId] as const,
+  activities: (tenantId: Id) => ['activities', tenantId] as const,
   /** Global reference data (not tenant scoped). */
   ref: (resource: string, ...filters: Id[]) => ['ref', resource, ...filters] as const,
 }

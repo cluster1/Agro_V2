@@ -21,7 +21,7 @@ import { formatDateTime } from '@/lib/format'
 import { UploadMediaDialog } from '@/components/media/upload-media-dialog'
 import { MediaGalleryModal } from '@/components/media/media-gallery-modal'
 import { MediaImage } from '@/components/media/media-image'
-import { canModifyEnvironment } from '@/lib/permissions'
+import { canRecordActivities } from '@/lib/permissions'
 
 export default function MediaPage() {
   const { user } = useAuth()
@@ -32,7 +32,8 @@ export default function MediaPage() {
     : user?.tenant_id
 
   // Check if user can modify (add/edit/delete)
-  const canModify = canModifyEnvironment(user)
+  // Operators upload field photos too (BRD menu matrix); only the upload button hangs on this
+  const canModify = canRecordActivities(user)
 
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)

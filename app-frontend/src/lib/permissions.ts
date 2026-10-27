@@ -79,3 +79,12 @@ export function canManageSchedules(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
 }
+
+/**
+ * Check if user can record/edit/delete activities and upload field photos (Budidaya > Kegiatan).
+ * Admin, Tenant Admin dan Operator; Agronom hanya lihat (BRD matriks menu).
+ */
+export function canRecordActivities(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'operator'].includes(user.user_role)
+}

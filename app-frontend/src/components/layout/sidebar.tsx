@@ -26,6 +26,7 @@ import {
   Layers,
   Sprout,
   CalendarClock,
+  ClipboardCheck,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -73,6 +74,7 @@ const navigation: NavItem[] = [
     children: [
       { name: 'Tanaman', href: '/plants', icon: Sprout, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Jadwal', href: '/schedules', icon: CalendarClock, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+      { name: 'Kegiatan', href: '/activities', icon: ClipboardCheck, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
     ]
   },
   {
