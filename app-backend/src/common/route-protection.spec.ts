@@ -76,8 +76,17 @@ const OPERATOR_WRITES = new Set([
   'ActivityController.create',
   'ActivityController.update',
   'ActivityController.remove',
+  'ObservationController.create',
+  'ObservationController.update',
+  'ObservationController.remove',
 ]);
-const AGRONOM_WRITES = new Set(['ScheduleController.create', 'ScheduleController.update', 'ScheduleController.remove']);
+const AGRONOM_WRITES = new Set([
+  'ScheduleController.create',
+  'ScheduleController.update',
+  'ScheduleController.remove',
+  'ObservationController.verify', // agronom verifies observations
+  'ObservationController.reject',
+]);
 
 describe('route protection (auto-discovered)', () => {
   it('discovers the application controllers', () => {

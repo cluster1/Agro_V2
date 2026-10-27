@@ -20,6 +20,7 @@ import { RefModule } from './ref/ref.module';
 import { PlantModule } from './plant/plant.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ActivityModule } from './activity/activity.module';
+import { ObservationModule } from './observation/observation.module';
 import { WeatherModule } from './weather/weather.module';
 
 @Module({
@@ -72,6 +73,7 @@ import { WeatherModule } from './weather/weather.module';
     PlantModule,
     ScheduleModule,
     ActivityModule,
+    ObservationModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
