@@ -70,7 +70,13 @@ const PUBLIC_ROUTES = new Set(['AuthController.login', 'AuthController.refresh',
 const SELF_SERVICE_WRITES = new Set(['AuthController.changePassword']);
 
 // Roles that may legitimately write where the BRD menu matrix says so; everyone else stays read-only.
-const OPERATOR_WRITES = new Set(['AlertController.acknowledge']); // field handling of alerts
+const OPERATOR_WRITES = new Set([
+  'AlertController.acknowledge', // field handling of alerts
+  'MediaController.create', // field photos
+  'ActivityController.create',
+  'ActivityController.update',
+  'ActivityController.remove',
+]);
 const AGRONOM_WRITES = new Set(['ScheduleController.create', 'ScheduleController.update', 'ScheduleController.remove']);
 
 describe('route protection (auto-discovered)', () => {

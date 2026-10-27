@@ -21,6 +21,7 @@ import { parseBoundedInt } from '../common/utils/parse-bounded-int';
 import { safeUnlinkUpload } from './media-files';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { assertUploadedFile, IMAGE_AND_VIDEO, secureFileFilter, secureStorage } from '../common/utils/secure-upload';
+import { FieldWrite } from '../common/decorators/field-write.decorator';
 import { TenantId } from '../common/decorators/tenant-id.decorator';
 
 const DEFAULT_LIMIT = 10;
@@ -36,7 +37,7 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post()
-  @AdminWrite()
+  @FieldWrite() // operators upload field photos (BRD menu matrix)
   @ApiOperation({ summary: 'Upload media file' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Media uploaded successfully' })
