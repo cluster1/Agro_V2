@@ -79,6 +79,9 @@ const OPERATOR_WRITES = new Set([
   'ObservationController.create',
   'ObservationController.update',
   'ObservationController.remove',
+  'HarvestController.create',
+  'HarvestController.update',
+  'HarvestController.remove',
 ]);
 const AGRONOM_WRITES = new Set([
   'ScheduleController.create',

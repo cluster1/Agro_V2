@@ -21,6 +21,7 @@ import { PlantModule } from './plant/plant.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ActivityModule } from './activity/activity.module';
 import { ObservationModule } from './observation/observation.module';
+import { HarvestModule } from './harvest/harvest.module';
 import { WeatherModule } from './weather/weather.module';
 
 @Module({
@@ -74,6 +75,7 @@ import { WeatherModule } from './weather/weather.module';
     ScheduleModule,
     ActivityModule,
     ObservationModule,
+    HarvestModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
