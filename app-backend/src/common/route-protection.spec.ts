@@ -89,6 +89,10 @@ const AGRONOM_WRITES = new Set([
   'ScheduleController.remove',
   'ObservationController.verify', // agronom verifies observations
   'ObservationController.reject',
+  // agronom edits Komoditas and Ambang; the service narrows this per resource
+  'RefController.create',
+  'RefController.update',
+  'RefController.remove',
 ]);
 
 describe('route protection (auto-discovered)', () => {

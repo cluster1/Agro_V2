@@ -10,4 +10,10 @@ export class Unit {
 
   @Column({ type: 'varchar', length: 16, nullable: true })
   unit_symbol: string;
+
+  @Column({ type: 'int', nullable: true })
+  unit_sts: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  unit_update: Date;
 }
