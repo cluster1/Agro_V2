@@ -24,6 +24,8 @@ import {
   ChevronUp,
   X,
   Layers,
+  Sprout,
+  CalendarClock,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -62,6 +64,15 @@ const navigation: NavItem[] = [
       { name: 'Sensor Real-time', href: '/monitoring', icon: LineChart, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Galeri & CCTV', href: '/media', icon: Camera, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Alert', href: '/alerts', icon: Bell, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+    ]
+  },
+  {
+    name: 'Budidaya',
+    icon: Sprout,
+    roles: ['admin', 'tenant_admin', 'operator', 'agronom'],
+    children: [
+      { name: 'Tanaman', href: '/plants', icon: Sprout, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+      { name: 'Jadwal', href: '/schedules', icon: CalendarClock, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
     ]
   },
   {

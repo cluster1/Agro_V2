@@ -61,3 +61,21 @@ export function canHandleAlerts(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'operator'].includes(user.user_role)
 }
+
+/**
+ * Check if user can create/edit/close plants (Budidaya > Tanaman).
+ * Admin dan Tenant Admin penuh; Operator dan Agronom hanya lihat (BRD matriks menu).
+ */
+export function canManagePlants(user: User | null): boolean {
+  if (!user) return false
+  return user.user_role === 'admin' || user.user_role === 'tenant_admin'
+}
+
+/**
+ * Check if user can create/edit/cancel/delete schedules (Budidaya > Jadwal).
+ * Admin, Tenant Admin dan Agronom penuh; Operator hanya lihat (BRD matriks menu).
+ */
+export function canManageSchedules(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
+}
