@@ -15,6 +15,7 @@ import {
 import { api } from '@/lib/api'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
+import { apiErrorMessage } from '@/lib/api-error'
 
 interface DeleteClusterDialogProps {
   open: boolean
@@ -47,7 +48,7 @@ export function DeleteClusterDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menghapus cluster')
+      toast.error(apiErrorMessage(error, 'Gagal menghapus cluster'))
     },
   })
 

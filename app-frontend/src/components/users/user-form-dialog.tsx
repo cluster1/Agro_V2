@@ -41,6 +41,7 @@ import { roleLabel } from '@/lib/format'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { PHONE_REGEX, guardedOpenChange } from '@/components/forms/form-utils'
+import { apiErrorMessage, applyApiFieldErrors } from '@/lib/api-error'
 
 // Dynamic schema that validates based on mode
 const getUserFormSchema = (mode: 'create' | 'edit') => {
@@ -55,7 +56,7 @@ const getUserFormSchema = (mode: 'create' | 'edit') => {
       .optional()
       .refine((v) => !v || PHONE_REGEX.test(v), 'Format nomor telepon tidak valid'),
     user_role: z.string().min(1, 'Role harus dipilih'),
-    user_level: z.number().min(0).max(2).optional(),
+    user_level: z.number().min(0).max(3).optional(),
     user_sts: z.string().optional(),
     tenant_id: z.string().optional(),
   })
@@ -63,11 +64,14 @@ const getUserFormSchema = (mode: 'create' | 'edit') => {
 
 // Roles assignable from this form (must match the backend's USER_ROLES). The global 'admin' role
 // is offered separately, only to global admins.
-const ASSIGNABLE_ROLES = ['tenant_admin', 'operator', 'farmer', 'investor', 'viewer'] as const
+const ASSIGNABLE_ROLES = ['tenant_admin', 'operator', 'agronom'] as const
+// A tenant admin may only create operators (FSD F-USER-01).
+const TENANT_ADMIN_ROLES = ['operator'] as const
 
 // Access level follows the role. The backend requires role 'admin' and level 0 to go together:
-// 0 = global admin, 1 = tenant admin, 2 = everyone else.
-const levelForRole = (role: string) => (role === 'admin' ? 0 : role === 'tenant_admin' ? 1 : 2)
+// 0 = global admin, 1 = tenant admin, 2 = operator, 3 = agronom.
+const levelForRole = (role: string) =>
+  role === 'admin' ? 0 : role === 'tenant_admin' ? 1 : role === 'agronom' ? 3 : 2
 
 type UserFormValues = {
   user_name: string
@@ -133,7 +137,7 @@ export function UserFormDialog({
       user_email: '',
       user_pass: '',
       user_phone: '',
-      user_role: 'farmer',
+      user_role: 'operator',
       user_level: 2,
       user_sts: 'active',
       tenant_id: currentUser?.tenant_id || '',
@@ -186,7 +190,7 @@ export function UserFormDialog({
       // Remove tenant_id from body before sending to API
       const { tenant_id, ...requestBody } = values
 
-      const response = await api.post(`/tenants/${tenantId}/users`, requestBody)
+      const response = await api.post('/users', requestBody, tenantId ? { headers: { 'X-Tenant-Id': tenantId } } : undefined)
       return response.data
     },
     onSuccess: () => {
@@ -195,7 +199,8 @@ export function UserFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menambahkan pengguna')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal menambahkan pengguna'))
     },
   })
 
@@ -213,7 +218,7 @@ export function UserFormDialog({
         delete updateData.user_pass
       }
 
-      const response = await api.patch(`/tenants/${tenantId}/users/${user.user_id}`, updateData)
+      const response = await api.patch(`/users/${user.user_id}`, updateData)
       return response.data
     },
     onSuccess: () => {
@@ -222,7 +227,8 @@ export function UserFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui pengguna')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal memperbarui pengguna'))
     },
   })
 
@@ -441,7 +447,14 @@ export function UserFormDialog({
                         {(isGlobalAdmin || field.value === 'admin') && (
                           <SelectItem value="admin">{roleLabel('admin')}</SelectItem>
                         )}
-                        {ASSIGNABLE_ROLES.map((role) => (
+                        {/* keep the stored role selectable so the trigger never renders blank (e.g. a tenant admin editing an agronom) */}
+                        {[...(isGlobalAdmin ? ASSIGNABLE_ROLES : TENANT_ADMIN_ROLES)]
+                          .concat(
+                            field.value && field.value !== 'admin' && !(isGlobalAdmin ? ASSIGNABLE_ROLES : TENANT_ADMIN_ROLES).includes(field.value as any)
+                              ? [field.value as any]
+                              : [],
+                          )
+                          .map((role: string) => (
                           <SelectItem key={role} value={role}>
                             {roleLabel(role)}
                           </SelectItem>

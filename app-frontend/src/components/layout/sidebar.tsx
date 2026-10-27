@@ -52,30 +52,32 @@ const navigation: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['admin', 'tenant_admin', 'operator', 'owner']
+    roles: ['admin', 'tenant_admin', 'operator', 'agronom']
   },
   {
     name: 'Monitoring',
-    href: '/monitoring',
     icon: LineChart,
-    roles: ['admin', 'tenant_admin', 'operator', 'owner']
+    roles: ['admin', 'tenant_admin', 'operator', 'agronom'],
+    children: [
+      { name: 'Sensor Real-time', href: '/monitoring', icon: LineChart, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+      { name: 'Galeri & CCTV', href: '/media', icon: Camera, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+      { name: 'Alert', href: '/alerts', icon: Bell, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
+    ]
   },
   {
     name: 'Environment',
     icon: Layers,
-    roles: ['admin', 'tenant_admin', 'operator'],
+    roles: ['admin', 'tenant_admin'],
     children: [
-      { name: 'Sites & Cluster', href: '/sites', icon: MapPin, roles: ['admin', 'tenant_admin', 'operator'] },
-      { name: 'Device & Sensor', href: '/devices', icon: Radio, roles: ['admin', 'tenant_admin', 'operator'] },
-      { name: 'Alert', href: '/alerts', icon: Bell, roles: ['admin', 'tenant_admin', 'operator'] },
-      { name: 'Media', href: '/media', icon: Camera, roles: ['admin', 'tenant_admin', 'operator'] },
+      { name: 'Sites & Cluster', href: '/sites', icon: MapPin, roles: ['admin', 'tenant_admin'] },
+      { name: 'Device & Sensor', href: '/devices', icon: Radio, roles: ['admin', 'tenant_admin'] },
     ]
   },
   {
     name: 'Report',
     href: '/reports',
     icon: FileText,
-    roles: ['admin', 'tenant_admin', 'operator', 'owner']
+    roles: ['admin', 'tenant_admin', 'agronom']
   },
   {
     name: 'Utility',

@@ -36,6 +36,7 @@ import { api } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { Loader2 } from 'lucide-react'
 import { guardedOpenChange, num, numDisplay, optionalNumber } from '@/components/forms/form-utils'
+import { apiErrorMessage, applyApiFieldErrors } from '@/lib/api-error'
 
 const clusterFormSchema = z.object({
   site_id: z.string().min(1, 'Site harus dipilih'),
@@ -76,7 +77,7 @@ export function ClusterFormDialog({
   } = useQuery({
     queryKey: queryKeys.sites(tenantId),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${tenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!tenantId && open,
@@ -130,7 +131,7 @@ export function ClusterFormDialog({
 
   const createMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const response = await api.post(`/tenants/${tenantId}/clusters`, values)
+      const response = await api.post(`/clusters`, values)
       return response.data
     },
     onSuccess: (_data, variables) => {
@@ -139,7 +140,8 @@ export function ClusterFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menambahkan cluster')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal menambahkan cluster'))
     },
   })
 
@@ -155,7 +157,8 @@ export function ClusterFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui cluster')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal memperbarui cluster'))
     },
   })
 

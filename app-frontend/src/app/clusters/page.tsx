@@ -53,7 +53,7 @@ function ClustersPageContent() {
   const { data: sites, isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.sites(activeTenantId),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!activeTenantId,

@@ -38,6 +38,7 @@ import { Loader2, Trash2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
 import { uploadUrl } from '@/lib/utils'
 import { PHONE_REGEX, UNSAVED_MESSAGE } from '@/components/forms/form-utils'
+import { apiErrorMessage, applyApiFieldErrors } from '@/lib/api-error'
 
 
 const tenantFormSchema = z.object({
@@ -129,7 +130,8 @@ export function TenantFormDialog({
       finishSuccess()
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menambahkan tenant')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal menambahkan tenant'))
     },
   })
 
@@ -143,7 +145,8 @@ export function TenantFormDialog({
       finishSuccess()
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui tenant')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal memperbarui tenant'))
     },
   })
 
@@ -213,7 +216,7 @@ export function TenantFormDialog({
         logoPath = await uploadLogo()
       } catch (error: any) {
         // Abort: never save the tenant without the logo the user chose.
-        toast.error(error?.response?.data?.message || 'Gagal mengunggah logo. Tenant belum disimpan.')
+        toast.error(apiErrorMessage(error, 'Gagal mengunggah logo. Tenant belum disimpan.'))
         return
       } finally {
         setIsUploadingLogo(false)

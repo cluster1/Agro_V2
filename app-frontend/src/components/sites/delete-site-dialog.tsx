@@ -15,6 +15,7 @@ import {
 import { api } from '@/lib/api'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
+import { apiErrorMessage } from '@/lib/api-error'
 
 interface DeleteSiteDialogProps {
   open: boolean
@@ -33,7 +34,7 @@ export function DeleteSiteDialog({
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      await api.delete(`/tenants/${tenantId}/sites/${site.site_id}`)
+      await api.delete(`/sites/${site.site_id}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sites(tenantId) })
@@ -45,7 +46,7 @@ export function DeleteSiteDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menghapus site')
+      toast.error(apiErrorMessage(error, 'Gagal menghapus site'))
     },
   })
 

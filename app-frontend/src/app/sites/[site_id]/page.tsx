@@ -64,7 +64,7 @@ export default function SiteDetailPage() {
   } = useQuery({
     queryKey: queryKeys.site(site_id),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/sites/${site_id}`)
+      const response = await api.get(`/sites/${site_id}`)
       return response.data
     },
     enabled: !!activeTenantId && !!site_id,

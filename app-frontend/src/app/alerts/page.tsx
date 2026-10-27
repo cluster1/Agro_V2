@@ -13,16 +13,24 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
-import { Bell, AlertTriangle, Filter, X, Download, Search } from 'lucide-react'
+import { Bell, AlertTriangle, Filter, X, Download, Search, CheckCircle2 } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { format } from 'date-fns'
 import { formatDateTime, formatNumber } from '@/lib/format'
+import { canHandleAlerts } from '@/lib/permissions'
+import { ALERT_CODES, ALERT_STATUS, alertStatus } from '@/lib/alert-status'
+import { HandleAlertDialog } from '@/components/alerts/handle-alert-dialog'
 
 interface AlertData {
   alm_id: string
   alm_date: string
+  alcode_id: string
+  alm_sts: number | null
+  alm_ack_user: string | null
+  alm_ack_date: string | null
+  alm_note: string | null
   alcode_note: string
   dev_name: string
   dev_id: string
@@ -67,7 +75,11 @@ export default function AlertsPage() {
   const [selectedSite, setSelectedSite] = useState<string | undefined>(undefined)
   const [selectedCluster, setSelectedCluster] = useState<string | undefined>(undefined)
   const [selectedDevice, setSelectedDevice] = useState<string | undefined>(undefined)
+  const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined)
+  const [selectedCode, setSelectedCode] = useState<string | undefined>(undefined)
   const [searchTerm, setSearchTerm] = useState('')
+  const [handling, setHandling] = useState<AlertData | null>(null)
+  const canHandle = canHandleAlerts(user)
 
   // The default 7-day window is not an "active filter"; any other range is.
   const isDefaultRange =
@@ -75,11 +87,11 @@ export default function AlertsPage() {
     format(startDate, DAY_FORMAT) === format(defaultStart(), DAY_FORMAT) &&
     format(endDate, DAY_FORMAT) === format(new Date(), DAY_FORMAT)
   const hasActiveFilters =
-    !!searchTerm || !!selectedSite || !!selectedCluster || !!selectedDevice || !isDefaultRange
+    !!searchTerm || !!selectedSite || !!selectedCluster || !!selectedDevice || !!selectedStatus || !!selectedCode || !isDefaultRange
 
   // Fetch alerts with filters
   const { data: alerts, isLoading, isError, refetch } = useQuery({
-    queryKey: ['alerts', activeTenantId, startDate, endDate, selectedSite, selectedCluster, selectedDevice],
+    queryKey: ['alerts', activeTenantId, startDate, endDate, selectedSite, selectedCluster, selectedDevice, selectedStatus, selectedCode],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (startDate) params.append('startDate', format(startDate, DAY_FORMAT))
@@ -87,8 +99,10 @@ export default function AlertsPage() {
       if (selectedSite) params.append('siteId', selectedSite)
       if (selectedCluster) params.append('clusterId', selectedCluster)
       if (selectedDevice) params.append('deviceId', selectedDevice)
+      if (selectedStatus) params.append('status', selectedStatus)
+      if (selectedCode) params.append('code', selectedCode)
 
-      const response = await api.get(`/tenants/${activeTenantId}/alerts?${params.toString()}`)
+      const response = await api.get(`/alerts?${params.toString()}`)
       return response.data as AlertData[]
     },
     enabled: !!activeTenantId,
@@ -98,7 +112,7 @@ export default function AlertsPage() {
   const { data: sites } = useQuery({
     queryKey: ['sites', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -108,7 +122,7 @@ export default function AlertsPage() {
   const { data: clusters } = useQuery({
     queryKey: ['clusters', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/clusters`)
+      const response = await api.get(`/clusters`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -118,7 +132,7 @@ export default function AlertsPage() {
   const { data: devices } = useQuery({
     queryKey: ['devices', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/devices`)
+      const response = await api.get(`/devices`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -131,6 +145,8 @@ export default function AlertsPage() {
     setSelectedSite(undefined)
     setSelectedCluster(undefined)
     setSelectedDevice(undefined)
+    setSelectedStatus(undefined)
+    setSelectedCode(undefined)
     setSearchTerm('')
   }
 
@@ -154,7 +170,7 @@ export default function AlertsPage() {
   const exportToCSV = () => {
     if (filteredAlerts.length === 0) return
 
-    const headers = ['Tanggal Alarm', 'Kode Alarm', 'Site', 'Cluster', 'Perangkat', 'Sensor', 'Tanggal Baca', 'Nilai', 'Satuan']
+    const headers = ['Tanggal Alarm', 'Kode Alarm', 'Site', 'Cluster', 'Perangkat', 'Sensor', 'Tanggal Baca', 'Nilai', 'Satuan', 'Status', 'Catatan']
     const rows = filteredAlerts.map(alert => [
       alert.alm_date,
       alert.alcode_note || '',
@@ -164,7 +180,9 @@ export default function AlertsPage() {
       alert.ds_name || '',
       alert.read_date || '',
       alert.read_value ?? '',
-      alert.unit_symbol || ''
+      alert.unit_symbol || '',
+      alertStatus(alert.alm_sts).label,
+      alert.alm_note || ''
     ])
 
     const csvContent = [
@@ -282,6 +300,42 @@ export default function AlertsPage() {
                 </Select>
               </div>
 
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="alerts-status">Status</Label>
+                <Select value={selectedStatus ?? 'all'} onValueChange={(value) => setSelectedStatus(value === 'all' ? undefined : value)}>
+                  <SelectTrigger id="alerts-status">
+                    <SelectValue placeholder="Semua Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    {Object.entries(ALERT_STATUS).map(([value, { label }]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Code Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="alerts-code">Kode Alarm</Label>
+                <Select value={selectedCode ?? 'all'} onValueChange={(value) => setSelectedCode(value === 'all' ? undefined : value)}>
+                  <SelectTrigger id="alerts-code">
+                    <SelectValue placeholder="Semua Kode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kode</SelectItem>
+                    {ALERT_CODES.map((code) => (
+                      <SelectItem key={code.value} value={code.value}>
+                        {code.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Search */}
               <div className="space-y-2">
                 <Label htmlFor="alerts-search">Cari</Label>
@@ -339,6 +393,8 @@ export default function AlertsPage() {
                       <TableHead className="font-bold">Sensor</TableHead>
                       <TableHead className="font-bold">Tanggal Baca</TableHead>
                       <TableHead className="font-bold text-right">Nilai</TableHead>
+                      <TableHead className="font-bold">Status</TableHead>
+                      {canHandle && <TableHead className="font-bold text-right">Aksi</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -373,6 +429,25 @@ export default function AlertsPage() {
                             '-'
                           )}
                         </TableCell>
+                        <TableCell>
+                          <Badge variant={alertStatus(alert.alm_sts).variant}>{alertStatus(alert.alm_sts).label}</Badge>
+                          {alert.alm_note && (
+                            <p className="mt-1 max-w-[16rem] truncate text-xs text-muted-foreground" title={alert.alm_note}>
+                              {alert.alm_note}
+                            </p>
+                          )}
+                        </TableCell>
+                        {canHandle && (
+                          <TableCell className="text-right">
+                            {(alert.alm_sts ?? 0) < 2 ? (
+                              <Button variant="outline" size="sm" onClick={() => setHandling(alert)}>
+                                Tangani
+                              </Button>
+                            ) : (
+                              <CheckCircle2 className="ml-auto h-4 w-4 text-success" aria-label="Selesai" />
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -392,6 +467,12 @@ export default function AlertsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <HandleAlertDialog
+        open={!!handling}
+        onOpenChange={(open) => !open && setHandling(null)}
+        alert={handling}
+      />
     </DashboardLayout>
   )
 }

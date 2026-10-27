@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
+import { apiErrorMessage } from '@/lib/api-error'
 
 export function useAuth() {
   const router = useRouter()
@@ -21,7 +22,7 @@ export function useAuth() {
       router.push('/dashboard')
       return { success: true }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login Failed! Please check your email and password.'
+      const errorMessage = apiErrorMessage(error, 'Login Failed! Please check your email and password.')
       toast.error(errorMessage, {
         duration: 6000,
         description: 'Please try again or contact administrator if the problem persists.',

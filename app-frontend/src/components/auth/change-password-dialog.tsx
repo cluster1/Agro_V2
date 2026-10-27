@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { guardedOpenChange } from '@/components/forms/form-utils'
+import { apiErrorMessage } from '@/lib/api-error'
 
 const changePasswordSchema = z.object({
   oldPassword: z.string().min(1, 'Password lama wajib diisi'),
@@ -131,7 +132,7 @@ export function ChangePasswordDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal mengubah password')
+      toast.error(apiErrorMessage(error, 'Gagal mengubah password'))
     },
   })
 

@@ -59,7 +59,7 @@ export function SensorFormDialog({
   } = useQuery({
     queryKey: queryKeys.devices(tenantId),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${tenantId}/devices`)
+      const response = await api.get(`/devices`)
       return response.data
     },
     enabled: !!tenantId && open,
@@ -121,7 +121,7 @@ export function SensorFormDialog({
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const response = await api.post(`/tenants/${tenantId}/sensors`, data)
+      const response = await api.post(`/sensors`, data)
       return response.data
     },
     onSuccess: (_data, variables) => {

@@ -35,6 +35,7 @@ import { api } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { Loader2 } from 'lucide-react'
 import { guardedOpenChange, num, numDisplay, optionalNumber } from '@/components/forms/form-utils'
+import { apiErrorMessage, applyApiFieldErrors } from '@/lib/api-error'
 
 const siteFormSchema = z.object({
   site_name: z.string().min(3, 'Nama site minimal 3 karakter'),
@@ -106,7 +107,7 @@ export function SiteFormDialog({
 
   const createMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const response = await api.post(`/tenants/${tenantId}/sites`, values)
+      const response = await api.post(`/sites`, values)
       return response.data
     },
     onSuccess: () => {
@@ -115,13 +116,14 @@ export function SiteFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menambahkan site')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal menambahkan site'))
     },
   })
 
   const updateMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const response = await api.patch(`/tenants/${tenantId}/sites/${site.site_id}`, values)
+      const response = await api.patch(`/sites/${site.site_id}`, values)
       return response.data
     },
     onSuccess: () => {
@@ -130,7 +132,8 @@ export function SiteFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui site')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal memperbarui site'))
     },
   })
 

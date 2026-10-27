@@ -118,7 +118,7 @@ export function UploadMediaDialog({ isOpen, onClose, tenantId, sites, clusters }
       formData.append('media_type', data.media_type)
       if (data.media_desc) formData.append('media_desc', data.media_desc)
 
-      await api.post(`/tenants/${tenantId}/media`, formData, {
+      await api.post(`/media`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

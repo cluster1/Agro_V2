@@ -3,7 +3,7 @@
  * Mengatur akses CRUD berdasarkan user role
  */
 
-export type UserRole = 'admin' | 'tenant_admin' | 'operator' | 'owner' | 'viewer'
+export type UserRole = 'admin' | 'tenant_admin' | 'operator' | 'agronom'
 
 export interface User {
   user_role: string
@@ -41,8 +41,8 @@ export function canViewEnvironment(user: User | null): boolean {
   
   const role = user.user_role
   
-  // Admin, Tenant Admin, dan Operator bisa view
-  return role === 'admin' || role === 'tenant_admin' || role === 'operator'
+  // Admin dan Tenant Admin (operator tidak melihat menu Environment, BRD-03)
+  return role === 'admin' || role === 'tenant_admin'
 }
 
 /**
@@ -51,4 +51,13 @@ export function canViewEnvironment(user: User | null): boolean {
 export function hasMenuAccess(user: User | null, allowedRoles: string[]): boolean {
   if (!user) return false
   return allowedRoles.includes(user.user_role)
+}
+
+/**
+ * Check if user can mark alerts as seen/resolved (PATCH /alerts/:id).
+ * Admin, Tenant Admin dan Operator bisa; Agronom hanya melihat.
+ */
+export function canHandleAlerts(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'operator'].includes(user.user_role)
 }

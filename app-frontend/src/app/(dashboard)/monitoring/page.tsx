@@ -58,7 +58,7 @@ export default function MonitoringPage() {
   const { data: sites } = useQuery({
     queryKey: ['sites', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -82,7 +82,7 @@ export default function MonitoringPage() {
       if (selectedSite && selectedSite !== 'all') params.append('siteId', selectedSite)
       if (selectedCluster && selectedCluster !== 'all') params.append('clusterId', selectedCluster)
 
-      const response = await api.get(`/tenants/${activeTenantId}/monitoring/devices?${params}`)
+      const response = await api.get(`/monitoring/devices?${params}`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -97,18 +97,18 @@ export default function MonitoringPage() {
 
       // If cluster is selected, fetch media for that cluster
       if (selectedCluster && selectedCluster !== 'all') {
-        const response = await api.get(`/tenants/${activeTenantId}/media/cluster/${selectedCluster}?limit=10`)
+        const response = await api.get(`/media/cluster/${selectedCluster}?limit=10`)
         return response.data
       }
 
       // If site is selected, fetch media for that site
       if (selectedSite && selectedSite !== 'all') {
-        const response = await api.get(`/tenants/${activeTenantId}/media/site/${selectedSite}?limit=10`)
+        const response = await api.get(`/media/site/${selectedSite}?limit=10`)
         return response.data
       }
 
       // Otherwise, fetch all media for the tenant
-      const response = await api.get(`/tenants/${activeTenantId}/media?limit=10`)
+      const response = await api.get(`/media?limit=10`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -432,7 +432,7 @@ function TenantActivity({ activeTenantId }: { activeTenantId: string }) {
   } = useQuery({
     queryKey: ['last-readings', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/monitoring/last-readings?limit=10`)
+      const response = await api.get(`/monitoring/last-readings?limit=10`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -448,7 +448,7 @@ function TenantActivity({ activeTenantId }: { activeTenantId: string }) {
   } = useQuery({
     queryKey: ['alerts', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/monitoring/alerts?hours=24`)
+      const response = await api.get(`/monitoring/alerts?hours=24`)
       return response.data
     },
     enabled: !!activeTenantId,

@@ -16,6 +16,7 @@ import { api } from '@/lib/api'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
 import { useAuth } from '@/hooks/use-auth'
+import { apiErrorMessage } from '@/lib/api-error'
 
 interface DeleteUserDialogProps {
   open: boolean
@@ -37,7 +38,7 @@ export function DeleteUserDialog({
     mutationFn: async () => {
       // Use tenant_id from the user being deleted, not the current user,
       // so an admin can delete users from other tenants.
-      const response = await api.delete(`/tenants/${tenantId}/users/${user.user_id}`)
+      const response = await api.delete(`/users/${user.user_id}`)
       return response.data
     },
     onSuccess: () => {
@@ -48,7 +49,7 @@ export function DeleteUserDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menghapus pengguna')
+      toast.error(apiErrorMessage(error, 'Gagal menghapus pengguna'))
     },
   })
 

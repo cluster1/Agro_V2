@@ -21,7 +21,7 @@ export function SensorSummary({ tenantId }: SensorSummaryProps) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['sensor-summary', tenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${tenantId}/monitoring/sensor-summary`)
+      const response = await api.get(`/monitoring/sensor-summary`)
       return response.data
     },
     refetchInterval: 30000,

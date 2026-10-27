@@ -27,14 +27,15 @@ import { roleLabel } from '@/lib/format'
 const ROLE_VARIANTS: Record<string, BadgeProps['variant']> = {
   admin: 'default',
   tenant_admin: 'info',
-  farmer: 'success',
-  investor: 'warning',
+  operator: 'success',
+  agronom: 'warning',
 }
 
 const LEVEL_BADGES: Record<number, { label: string; variant: BadgeProps['variant'] }> = {
   0: { label: 'Admin Global', variant: 'destructive' },
   1: { label: 'Admin Tenant', variant: 'info' },
-  2: { label: 'Pengguna', variant: 'success' },
+  2: { label: 'Operator', variant: 'success' },
+  3: { label: 'Agronom', variant: 'warning' },
 }
 
 export default function UsersPage() {
@@ -52,7 +53,7 @@ export default function UsersPage() {
 
       // Admin (user_level === 0): Get all users from all tenants
       if (user.user_role === 'admin' || user.user_level === 0) {
-        const response = await api.get('/users')
+        const response = await api.get('/users', { noTenant: true } as any)
         return response.data
       }
 
@@ -60,7 +61,7 @@ export default function UsersPage() {
       if (user.user_role === 'tenant_admin') {
         const tenantId = user.tenant_id
         if (!tenantId) return []
-        const response = await api.get(`/tenants/${tenantId}/users`)
+        const response = await api.get('/users')
         return response.data
       }
 

@@ -45,7 +45,7 @@ export default function MediaPage() {
   const { data: sites } = useQuery({
     queryKey: ['sites', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -55,7 +55,7 @@ export default function MediaPage() {
   const { data: allClusters } = useQuery({
     queryKey: ['all-clusters', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/clusters`)
+      const response = await api.get(`/clusters`)
       return response.data
     },
     enabled: !!activeTenantId,
@@ -68,7 +68,7 @@ export default function MediaPage() {
       const params = new URLSearchParams()
       if (selectedSite && selectedSite !== 'all') params.append('siteId', selectedSite)
 
-      const response = await api.get(`/tenants/${activeTenantId}/media?${params}`)
+      const response = await api.get(`/media?${params}`)
       return response.data
     },
     enabled: !!activeTenantId,

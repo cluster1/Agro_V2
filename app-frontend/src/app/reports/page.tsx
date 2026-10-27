@@ -59,7 +59,7 @@ export default function ReportsPage() {
     setIsDownloading(true)
     try {
       const response = await api.get(
-        `/reports/tenants/${tenantId}/sensor-readings/excel`,
+        `/reports/sensor-readings/excel`,
         {
           params: { startDate, endDate },
           responseType: 'blob',

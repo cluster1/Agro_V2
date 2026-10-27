@@ -15,6 +15,7 @@ import {
 import { api } from '@/lib/api'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
+import { apiErrorMessage } from '@/lib/api-error'
 
 interface DeleteDeviceDialogProps {
   open: boolean
@@ -33,7 +34,7 @@ export function DeleteDeviceDialog({
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      await api.delete(`/tenants/${tenantId}/devices/${device.dev_id}`)
+      await api.delete(`/devices/${device.dev_id}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.devices(tenantId) })
@@ -45,7 +46,7 @@ export function DeleteDeviceDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menghapus device')
+      toast.error(apiErrorMessage(error, 'Gagal menghapus device'))
     },
   })
 

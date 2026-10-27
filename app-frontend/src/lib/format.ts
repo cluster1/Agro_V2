@@ -19,9 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrator Global',
   tenant_admin: 'Admin Tenant',
   operator: 'Operator',
-  farmer: 'Petani',
-  investor: 'Investor',
-  viewer: 'Pengamat',
+  agronom: 'Agronom',
 }
 
 /** Human label for a user_role value (falls back to the raw value). */

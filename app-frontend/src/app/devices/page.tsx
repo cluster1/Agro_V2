@@ -46,7 +46,7 @@ export default function DevicesPage() {
   const { data: devices, isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.devices(activeTenantId),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${activeTenantId}/devices`)
+      const response = await api.get(`/devices`)
       return response.data
     },
     enabled: !!activeTenantId,

@@ -36,6 +36,7 @@ import { api } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { Loader2 } from 'lucide-react'
 import { guardedOpenChange, num, numDisplay, optionalNumber } from '@/components/forms/form-utils'
+import { apiErrorMessage, applyApiFieldErrors } from '@/lib/api-error'
 
 const deviceFormSchema = z.object({
   dev_name: z.string().min(3, 'Nama device minimal 3 karakter'),
@@ -98,7 +99,7 @@ export function DeviceFormDialog({
   } = useQuery({
     queryKey: queryKeys.sites(tenantId),
     queryFn: async () => {
-      const response = await api.get(`/tenants/${tenantId}/sites`)
+      const response = await api.get(`/sites`)
       return response.data
     },
     enabled: !!tenantId && open,
@@ -150,7 +151,7 @@ export function DeviceFormDialog({
 
   const createMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const response = await api.post(`/tenants/${tenantId}/devices`, values)
+      const response = await api.post(`/devices`, values)
       return response.data
     },
     onSuccess: () => {
@@ -159,13 +160,14 @@ export function DeviceFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal menambahkan device')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal menambahkan device'))
     },
   })
 
   const updateMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
-      const response = await api.patch(`/tenants/${tenantId}/devices/${device.dev_id}`, values)
+      const response = await api.patch(`/devices/${device.dev_id}`, values)
       return response.data
     },
     onSuccess: () => {
@@ -174,7 +176,8 @@ export function DeviceFormDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Gagal memperbarui device')
+      applyApiFieldErrors(error, form.setError)
+      toast.error(apiErrorMessage(error, 'Gagal memperbarui device'))
     },
   })
 

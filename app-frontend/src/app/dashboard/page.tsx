@@ -51,7 +51,7 @@ export default function DashboardPage() {
         const response = await api.get('/reports/global/dashboard')
         return response.data
       }
-      const response = await api.get(`/reports/tenants/${activeTenantId}/dashboard`)
+      const response = await api.get(`/reports/dashboard`)
       return response.data
     },
     enabled: !!user,
@@ -66,7 +66,7 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['timeline', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/reports/tenants/${activeTenantId}/timeline`)
+      const response = await api.get(`/reports/timeline`)
       return response.data
     },
     enabled: !!user && !isGlobalView && !!activeTenantId,
@@ -82,7 +82,7 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['map-data', activeTenantId],
     queryFn: async () => {
-      const response = await api.get(`/reports/tenants/${activeTenantId}/map-data`)
+      const response = await api.get(`/reports/map-data`)
       return response.data
     },
     enabled: !!user && !isGlobalView && !!activeTenantId,

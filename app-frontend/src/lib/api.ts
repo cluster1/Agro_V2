@@ -41,9 +41,16 @@ export function refreshAccessToken(): Promise<string> {
 
 // Request interceptor for adding auth token
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
+  const { accessToken: token, user, selectedTenantId } = useAuthStore.getState()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  // The backend takes the tenant from the JWT. Only a global admin (level 0) may act on another
+  // tenant, via X-Tenant-Id; the server ignores the header for everyone else. A request can set the
+  // header itself, or pass `noTenant` to get the cross-tenant view (e.g. the global users list).
+  const cfg = config as typeof config & { noTenant?: boolean }
+  if (user?.user_level === 0 && selectedTenantId && !cfg.noTenant && !config.headers['X-Tenant-Id']) {
+    config.headers['X-Tenant-Id'] = selectedTenantId
   }
   return config
 })

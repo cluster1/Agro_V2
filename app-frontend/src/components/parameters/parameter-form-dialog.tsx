@@ -164,7 +164,7 @@ export function ParameterFormDialog({
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const response = await api.post(`/tenants/${tenantId}/devices/${devId}/sensors/${sensId}/parameters`, data)
+      const response = await api.post(`/devices/${devId}/sensors/${sensId}/parameters`, data)
       return response.data
     },
     onSuccess: () => {

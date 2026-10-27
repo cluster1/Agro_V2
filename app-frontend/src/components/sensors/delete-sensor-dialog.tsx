@@ -15,6 +15,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { queryKeys } from '@/lib/query-keys'
+import { apiErrorMessage } from '@/lib/api-error'
 
 interface DeleteSensorDialogProps {
   open: boolean
@@ -47,7 +48,7 @@ export function DeleteSensorDialog({
       onOpenChange(false)
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || error.message || 'Gagal menghapus sensor')
+      toast.error(apiErrorMessage(error, 'Gagal menghapus sensor'))
     },
   })
 
