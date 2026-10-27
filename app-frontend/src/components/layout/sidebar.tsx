@@ -32,6 +32,7 @@ import {
   FlaskConical,
   Database,
   Upload,
+  Boxes,
   Settings,
 } from 'lucide-react'
 import { TenantSelector } from '@/components/tenant-selector'
@@ -67,6 +68,7 @@ const navigation: NavItem[] = [
     icon: LineChart,
     roles: ['admin', 'tenant_admin', 'operator', 'agronom'],
     children: [
+      { name: 'Digital Twin', href: '/twin', icon: Boxes, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Sensor Real-time', href: '/monitoring', icon: LineChart, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Galeri & CCTV', href: '/media', icon: Camera, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },
       { name: 'Alert', href: '/alerts', icon: Bell, roles: ['admin', 'tenant_admin', 'operator', 'agronom'] },

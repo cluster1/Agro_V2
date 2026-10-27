@@ -120,3 +120,12 @@ export function canViewSoil(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
 }
+
+/**
+ * Check if user can run the model (Digital Twin > Jalankan simulasi).
+ * Admin, Tenant Admin dan Agronom; Operator hanya melihat (BRD matriks menu).
+ */
+export function canRunSimulation(user: User | null): boolean {
+  if (!user) return false
+  return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
+}
