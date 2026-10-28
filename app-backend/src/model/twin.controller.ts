@@ -26,6 +26,12 @@ export class TwinController {
     return this.twinService.siteTwin(query.siteId, scope);
   }
 
+  @Get('twin/map')
+  @ApiOperation({ summary: 'Koordinat site, perangkat, dan sensor untuk peta twin (filter: siteId)' })
+  map(@TenantScope() scope: string | undefined, @Query() query: TwinQueryDto) {
+    return this.twinService.mapData(query.siteId, scope);
+  }
+
   @Get('plants/:id/twin')
   @ApiOperation({ summary: 'Data agregat Digital Twin satu tanaman dalam satu panggilan' })
   plant(@TenantScope() scope: string | undefined, @Param('id') id: string) {

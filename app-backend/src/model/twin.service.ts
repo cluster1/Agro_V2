@@ -5,6 +5,9 @@ import { Plant } from '../plant/entities/plant.entity';
 import { Observation, OBSERVATION_STATUS } from '../observation/entities/observation.entity';
 import { Schedule, SCHEDULE_STATUS } from '../schedule/entities/schedule.entity';
 import { Media } from '../media/entities/media.entity';
+import { Site } from '../site/entities/site.entity';
+import { Device } from '../device/entities/device.entity';
+import { Sensor } from '../sensor/entities/sensor.entity';
 import { DeviceSensor } from '../device-sensor/entities/device-sensor.entity';
 import { SensorReadUpdate } from '../monitoring/entities/sensor-read-update.entity';
 import { PlantVariety } from '../ref/entities/plant-variety.entity';
@@ -240,6 +243,40 @@ export class TwinService {
         growth_index: sim?.sim_growth_idx ?? null,
       };
     });
+  }
+
+  /**
+   * Coordinates for the twin map: sites of the active plants, plus their devices and sensors.
+   * Raw coordinates are returned (null when unset); the client falls back to the site point.
+   */
+  async mapData(siteId: string | undefined, scope: string | undefined) {
+    const where: Record<string, unknown> = { plant_sts: 1 };
+    if (siteId) where.site_id = siteId;
+    const plants = (await this.plants.find({ where: scoped(where, scope) })) as Plant[];
+    const siteIds = [...new Set(plants.map((p) => p.site_id).filter(Boolean))];
+    if (!siteIds.length) return { sites: [], devices: [], sensors: [] };
+
+    const [sites, devices] = await Promise.all([
+      this.manager.getRepository(Site).find({ where: scoped({ site_id: In(siteIds) }, scope) }) as Promise<Site[]>,
+      this.manager.getRepository(Device).find({ where: scoped({ site_id: In(siteIds) }, scope) }) as Promise<Device[]>,
+    ]);
+    const sensors = devices.length
+      ? ((await this.manager.getRepository(Sensor).find({ where: scoped({ dev_id: In(devices.map((d) => d.dev_id)) }, scope) })) as Sensor[])
+      : [];
+    const num = (v: number | string | null | undefined) => (v === null || v === undefined || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
+
+    return {
+      sites: sites.map((s) => ({ site_id: s.site_id, name: s.site_name, lat: num(s.site_lat), lon: num(s.site_lon) })),
+      devices: devices.map((d) => ({
+        dev_id: d.dev_id,
+        name: d.dev_name,
+        site_id: d.site_id,
+        cluster_id: d.cluster_id ?? null,
+        lat: num(d.dev_lat),
+        lon: num(d.dev_lon),
+      })),
+      sensors: sensors.map((s) => ({ sens_id: s.sens_id, dev_id: s.dev_id, name: s.sens_name, type: s.sens_type ?? null, lat: num(s.sens_lat), lon: num(s.sens_lon) })),
+    };
   }
 
   private currentPhase(timeline: { phase_id: string; sp_start_date: Date | string }[], now: string, byId: Map<string, PlantPhase>) {
