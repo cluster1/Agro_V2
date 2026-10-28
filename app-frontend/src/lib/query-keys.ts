@@ -27,6 +27,7 @@ export const queryKeys = {
   accuracy: (tenantId: Id) => ['accuracy', tenantId] as const,
   twin: (tenantId: Id) => ['twin', 'site', tenantId] as const,
   plantTwin: (plantId: Id) => ['twin', 'plant', plantId] as const,
+  twinMap: (tenantId: Id) => ['twin', 'map', tenantId] as const,
   /** Global reference data (not tenant scoped). */
   ref: (resource: string, ...filters: Id[]) => ['ref', resource, ...filters] as const,
 }

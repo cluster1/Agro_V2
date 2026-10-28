@@ -21,8 +21,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { canRunSimulation } from '@/lib/permissions'
 import { queryKeys } from '@/lib/query-keys'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, type PlantTwin, type SitePlant } from '@/lib/twin'
-import { PlotMap, type ColorMode } from '@/components/twin/plot-map'
+import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, type PlantTwin, type SitePlant, type TwinMapData } from '@/lib/twin'
+import type { ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
@@ -31,6 +31,12 @@ import { GroundTruth } from '@/components/twin/ground-truth'
 const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
   ssr: false,
   loading: () => <div className="aspect-[4/3] w-full rounded-lg bg-muted motion-safe:animate-pulse" role="status" aria-label="Memuat model 3D" />,
+})
+
+// Leaflet needs the browser (window): never render it on the server
+const PlotMap = dynamic(() => import('@/components/twin/plot-map').then((m) => m.PlotMap), {
+  ssr: false,
+  loading: () => <div className="h-[420px] w-full rounded-lg bg-muted motion-safe:animate-pulse" role="status" aria-label="Memuat peta" />,
 })
 
 const SCENARIOS = [
@@ -62,6 +68,12 @@ export default function TwinPage() {
   const sitePlants = useQuery({
     queryKey: queryKeys.twin(activeTenantId),
     queryFn: async () => (await api.get('/twin')).data as SitePlant[],
+    enabled: !!activeTenantId,
+  })
+
+  const mapQuery = useQuery({
+    queryKey: queryKeys.twinMap(activeTenantId),
+    queryFn: async () => (await api.get('/twin/map')).data as TwinMapData,
     enabled: !!activeTenantId,
   })
 
@@ -259,12 +271,12 @@ export default function TwinPage() {
                       3D
                     </Button>
                     <Button type="button" size="sm" variant={view === '2d' ? 'default' : 'outline'} aria-pressed={view === '2d'} onClick={() => setView('2d')}>
-                      Peta 2D
+                      Peta
                     </Button>
                   </div>
                   {view === '3d' && gl === false && (
                     <p role="status" className="text-sm text-muted-foreground">
-                      Browser ini tidak mendukung WebGL, jadi model 3D diganti peta 2D.
+                      Browser ini tidak mendukung WebGL, jadi model 3D diganti peta.
                     </p>
                   )}
                 </div>
@@ -287,6 +299,7 @@ export default function TwinPage() {
                 ) : (
                   <PlotMap
                     plants={sitePlants.data ?? []}
+                    mapData={mapQuery.data}
                     selectedId={twin.plant.plant_id}
                     mode={mode}
                     phaseColor={phaseAtDay?.color ?? twin.now.phase?.color ?? null}

@@ -225,38 +225,79 @@ export function bwdAt(observations: TwinObservation[], day: string): number | nu
   return past.length ? (past[past.length - 1].bwd as number) : null
 }
 
-export interface ProjectedShape {
-  points: string
-  viewBox: string
+export type CoordSource = 'own' | 'plant' | 'site'
+
+export interface ResolvedCoord {
+  lat: number
+  lon: number
+  source: CoordSource
 }
 
+const validCoord = (lat: unknown, lon: unknown): lat is number =>
+  typeof lat === 'number' &&
+  typeof lon === 'number' &&
+  Number.isFinite(lat) &&
+  Number.isFinite(lon) &&
+  Math.abs(lat) <= 90 &&
+  Math.abs(lon) <= 180 &&
+  !(lat === 0 && lon === 0) // 0,0 = belum diisi, bukan lokasi nyata
+
 /**
- * Memproyeksikan polygon lon/lat ke koordinat SVG (equirectangular dengan koreksi lintang),
- * sehingga bentuk petak tidak melar. Sumbu y dibalik (utara di atas).
+ * Koordinat sebuah objek: milik sendiri bila valid, lalu fallback berurutan (petak, site).
+ * Cluster tidak punya koordinat, jadi rantainya: data sendiri -> petak -> site.
  */
-export function projectPolygons(rings: { id: string; ring: number[][] }[], size = 400, pad = 16) {
-  const all = rings.flatMap((r) => r.ring)
-  if (!all.length) return null
-  const lat0 = (all.reduce((s, p) => s + p[1], 0) / all.length) * (Math.PI / 180)
-  const xy = (p: number[]) => [p[0] * Math.cos(lat0), p[1]]
-  const pts = all.map(xy)
-  const minX = Math.min(...pts.map((p) => p[0]))
-  const maxX = Math.max(...pts.map((p) => p[0]))
-  const minY = Math.min(...pts.map((p) => p[1]))
-  const maxY = Math.max(...pts.map((p) => p[1]))
-  const span = Math.max(maxX - minX, maxY - minY) || 1e-6
-  const scale = (size - pad * 2) / span
-  const offX = (size - (maxX - minX) * scale) / 2
-  const offY = (size - (maxY - minY) * scale) / 2
-  const project = (p: number[]): [number, number] => {
-    const [x, y] = xy(p)
-    return [offX + (x - minX) * scale, size - (offY + (y - minY) * scale)]
+export function resolveCoord(
+  own: { lat: number | null | undefined; lon: number | null | undefined } | null | undefined,
+  fallbacks: { source: Exclude<CoordSource, 'own'>; lat: number | null | undefined; lon: number | null | undefined }[] = [],
+): ResolvedCoord | null {
+  if (own && validCoord(own.lat, own.lon)) return { lat: own.lat as number, lon: own.lon as number, source: 'own' }
+  for (const f of fallbacks) if (validCoord(f.lat, f.lon)) return { lat: f.lat as number, lon: f.lon as number, source: f.source }
+  return null
+}
+
+export const COORD_SOURCE_LABEL: Record<CoordSource, string> = {
+  own: 'koordinat sendiri',
+  plant: 'koordinat petak (perkiraan)',
+  site: 'koordinat site (perkiraan)',
+}
+
+/** Cincin GeoJSON [lon,lat] -> [lat,lon] untuk Leaflet; titik tak valid dibuang. */
+export function polygonLatLngs(geom: GeoJsonPolygon | null | undefined): [number, number][] | null {
+  const ring = ringOf(geom)
+  if (!ring) return null
+  const pts = ring.filter((p) => validCoord(p[1], p[0])).map((p): [number, number] => [p[1], p[0]])
+  return pts.length >= 4 ? pts : null
+}
+
+/** Ray casting; titik dan cincin dalam sistem koordinat yang sama. */
+export function pointInRing(point: [number, number], ring: [number, number][]): boolean {
+  let hit = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]
+    const [xj, yj] = ring[j]
+    if (yi > point[1] !== yj > point[1] && point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi) hit = !hit
   }
-  return {
-    size,
-    project,
-    shapes: rings.map((r) => ({ id: r.id, points: r.ring.map((p) => project(p).join(',')).join(' ') })),
+  return hit
+}
+
+/** Titik sampel BWD: pola diagonal pada kotak pembatas, hanya yang jatuh di dalam petak. Cincin [lat,lon]. */
+export function samplePoints(ring: [number, number][], count = 20): [number, number][] {
+  const lats = ring.map((p) => p[0])
+  const lons = ring.map((p) => p[1])
+  const [la0, la1, lo0, lo1] = [Math.min(...lats), Math.max(...lats), Math.min(...lons), Math.max(...lons)]
+  const out: [number, number][] = []
+  for (let i = 0; i < count; i++) {
+    const t = (i + 0.5) / count
+    const p: [number, number] = [la0 + (la1 - la0) * t, lo0 + (lo1 - lo0) * t]
+    if (pointInRing(p, ring)) out.push(p)
   }
+  return out
+}
+
+export interface TwinMapData {
+  sites: { site_id: string; name: string | null; lat: number | null; lon: number | null }[]
+  devices: { dev_id: string; name: string | null; site_id: string; cluster_id: string | null; lat: number | null; lon: number | null }[]
+  sensors: { sens_id: string; dev_id: string; name: string | null; type: string | null; lat: number | null; lon: number | null }[]
 }
 
 export const ringOf = (geom: GeoJsonPolygon | null | undefined): number[][] | null =>
