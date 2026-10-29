@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { N_STATUS, deviceSummaries, nStatus, type PlantTwin, type SceneSelection, type TimelineEntry, type sensorScene } from '@/lib/twin'
+import { N_STATUS, deviceSummaries, hasWater, nStatus, type PlantTwin, type SceneSelection, type TimelineEntry, type sensorScene } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 import type { Plot3DApi } from '@/components/twin/plot-3d'
 import { DeviceHud, NutrientHud } from '@/components/twin/hud-panels'
@@ -116,6 +116,7 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
       <figcaption className="text-center text-xs text-muted-foreground">
         Cuplikan 6 × 6 m, jajar legowo 2:1; bukan skala petak. Geser untuk memutar, gulir atau tombol zoom untuk memperbesar. Tinggi {Math.round(heightNow)} cm, {Math.round(tillerNow)} anakan per rumpun.
         {` Status N ${N_STATUS[status].label.toLowerCase()}.`}
+        {hasWater(currentSeq) ? ' Sawah tergenang.' : ' Sawah sudah dikeringkan.'}
       </figcaption>
     </figure>
   )

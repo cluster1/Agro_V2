@@ -23,6 +23,7 @@ import {
   type TwinMedia,
 } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
+import { BUND_CENTER, FieldBase, HALF, HIGHLIGHT, RiceCanopy, StationKitModel, hillPositions } from '@/components/twin/scene-parts'
 
 /** Perintah kamera untuk toolbar di luar kanvas (diisi Plot3D lewat prop `api`). */
 export interface Plot3DApi {
@@ -65,153 +66,6 @@ export interface Plot3DProps {
   onSelectDevice: (selection: SceneSelection | null) => void
   onSelectMedia: (id: string) => void
   label: string
-}
-
-const HIGHLIGHT = '#FFC107'
-
-/** Cuplikan petak: 6 x 6 m, jajar legowo 2:1 (25 x 12,5 x 50 cm). */
-const HALF = 3
-const SPACING_X = 0.25
-const PAIR_GAP = 0.125
-const BAND = 0.625
-const MAX_BLADES_PER_HILL = 10
-const MAX_HILLS_RENDERED = 700
-
-/** Pseudo-acak deterministik agar rumpun tidak "berkedip" saat render ulang. */
-function rng(seed: number) {
-  let s = seed >>> 0
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0
-    return s / 4294967296
-  }
-}
-
-function hillPositions(): [number, number][] {
-  const out: [number, number][] = []
-  for (let z = -HALF + 0.1; z < HALF - 0.1; z += BAND) {
-    for (const dz of [0, PAIR_GAP]) {
-      for (let x = -HALF + 0.1; x < HALF - 0.1; x += SPACING_X) out.push([x, z + dz])
-    }
-  }
-  return out.length > MAX_HILLS_RENDERED ? out.filter((_, i) => i % Math.ceil(out.length / MAX_HILLS_RENDERED) === 0) : out
-}
-
-/** Bilah daun: kerucut ramping yang tingginya mengikuti data, condong acak per rumpun. */
-function Blades({ hills, heightCm, tillers, color }: { hills: [number, number][]; heightCm: number; tillers: number; color: string }) {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const perHill = Math.max(1, Math.min(MAX_BLADES_PER_HILL, Math.round(tillers)))
-  const count = hills.length * perHill
-  const height = Math.max(0.02, heightCm / 100)
-
-  useLayoutEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
-    const dummy = new THREE.Object3D()
-    const rand = rng(42)
-    let i = 0
-    for (const [x, z] of hills) {
-      for (let b = 0; b < perHill; b++) {
-        const lean = 0.05 + rand() * 0.25
-        const dir = rand() * Math.PI * 2
-        const h = height * (0.85 + rand() * 0.3)
-        dummy.position.set(x + (rand() - 0.5) * 0.05, h / 2, z + (rand() - 0.5) * 0.05)
-        dummy.rotation.set(Math.sin(dir) * lean, 0, Math.cos(dir) * lean)
-        dummy.scale.set(1, h, 1)
-        dummy.updateMatrix()
-        mesh.setMatrixAt(i++, dummy.matrix)
-      }
-    }
-    mesh.count = count
-    mesh.instanceMatrix.needsUpdate = true
-  }, [hills, perHill, height, count])
-
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, Math.max(count, 1)]} frustumCulled={false}>
-      <coneGeometry args={[0.012, 1, 4]} />
-      <meshStandardMaterial color={color} roughness={0.8} />
-    </instancedMesh>
-  )
-}
-
-/** Malai: elips kecil di ujung rumpun, mulai fase berbunga. */
-function Panicles({ hills, heightCm, color }: { hills: [number, number][]; heightCm: number; color: string }) {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const height = Math.max(0.05, heightCm / 100)
-  useLayoutEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
-    const dummy = new THREE.Object3D()
-    const rand = rng(7)
-    hills.forEach(([x, z], i) => {
-      dummy.position.set(x + (rand() - 0.5) * 0.06, height * 0.95, z + (rand() - 0.5) * 0.06)
-      dummy.rotation.set((rand() - 0.5) * 0.8, 0, (rand() - 0.5) * 0.8)
-      dummy.updateMatrix()
-      mesh.setMatrixAt(i, dummy.matrix)
-    })
-    mesh.instanceMatrix.needsUpdate = true
-  }, [hills, height])
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, Math.max(hills.length, 1)]} frustumCulled={false}>
-      <capsuleGeometry args={[0.015, 0.12, 3, 6]} />
-      <meshStandardMaterial color={color} roughness={0.7} />
-    </instancedMesh>
-  )
-}
-
-/** Pengendali (Station Kit): tiang dan kotak kontrol; kamera yang tersimpan bersamanya dipasang di tiang yang sama. */
-function StationKit({
-  controller,
-  position,
-  selected,
-  onHover,
-  onSelect,
-}: {
-  controller: SceneController
-  position: [number, number]
-  selected: boolean
-  onHover: (label: string | null, clickable?: boolean) => void
-  onSelect: () => void
-}) {
-  const label = `Station Kit ${controller.name}${controller.cameras.length ? ` · kamera: ${controller.cameras.join(', ')}` : ''} (klik untuk info)`
-  return (
-    <group
-      position={[position[0], 0, position[1]]}
-      onClick={(e) => {
-        e.stopPropagation()
-        onSelect()
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        onHover(label, true)
-      }}
-      onPointerOut={() => onHover(null)}
-    >
-      <mesh position={[0, 1, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 2, 8]} />
-        <meshStandardMaterial color="#616161" emissive={selected ? HIGHLIGHT : '#000000'} emissiveIntensity={selected ? 0.7 : 0} />
-      </mesh>
-      {/* area klik lebih lebar dari tiang yang tipis */}
-      <mesh position={[0, 1, 0]} visible={false}>
-        <cylinderGeometry args={[0.25, 0.25, 2.2, 8]} />
-      </mesh>
-      <mesh position={[0, 1.9, 0]}>
-        <boxGeometry args={[0.35, 0.25, 0.2]} />
-        <meshStandardMaterial color="#1565C0" emissive={selected ? HIGHLIGHT : '#000000'} emissiveIntensity={selected ? 0.7 : 0} />
-      </mesh>
-      {selected && (
-        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.3, 0.38, 24]} />
-          <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
-        </mesh>
-      )}
-      {controller.cameras.length > 0 && (
-        <mesh position={[0.1, 2.13, 0.1]}>
-          <boxGeometry args={[0.22, 0.14, 0.26]} />
-          <meshStandardMaterial color="#212121" />
-        </mesh>
-      )}
-    </group>
-  )
 }
 
 /** Label data sensor yang melayang di atas sensornya: nama dan sampai dua parameter terbaca. */
@@ -260,6 +114,12 @@ function mapToPlot(geom: GeoJsonPolygon | null, lon: number, lat: number): [numb
   return [-HALF + tx * HALF * 2, HALF - ty * HALF * 2]
 }
 
+/** Pengendali berdiri di pematang, bukan di tengah sawah: titik di dalam petak digeser ke pematang terdekat. */
+function onBund([x, z]: [number, number]): [number, number] {
+  if (Math.abs(x) > HALF || Math.abs(z) > HALF) return [x, z]
+  return Math.abs(x) >= Math.abs(z) ? [(x < 0 ? -1 : 1) * BUND_CENTER, z] : [x, (z < 0 ? -1 : 1) * BUND_CENTER]
+}
+
 const HILLS = hillPositions()
 /** Titik sampel BWD: diagonal cuplikan, 30 cm dari tepi. */
 const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
@@ -275,9 +135,9 @@ const UP = new THREE.Vector3(0, 1, 0)
 
 type Controls = React.ElementRef<typeof OrbitControls>
 
-/** Luas cuplikan di layar pada zoom 1 (satuan dunia): lebar diagonal petak + label, dan tinggi miring + tiang 2 m. */
+/** Luas cuplikan di layar pada zoom 1 (satuan dunia): lebar diagonal petak + label, dan tinggi miring + tiang Station Kit 2,9 m. */
 const FIT_WIDTH = 12.5
-const FIT_HEIGHT = 9.5
+const FIT_HEIGHT = 10.3
 
 /**
  * Zoom awal menyesuaikan ukuran kanvas dan area yang tidak tertutup panel, supaya cuplikan 6 x 6 m dan tiangnya
@@ -373,7 +233,9 @@ export default function Plot3D(props: Plot3DProps) {
     () =>
       controllers.map((c, i) => ({
         c,
-        xz: (c.lon !== null && c.lat !== null ? mapToPlot(geom, c.lon, c.lat) : null) ?? ([-HALF - 0.4 + i * 0.7, -HALF - 0.4] as [number, number]),
+        xz: onBund(
+          (c.lon !== null && c.lat !== null ? mapToPlot(geom, c.lon, c.lat) : null) ?? ([-HALF - 0.4 + i * 0.7, -HALF - 0.4] as [number, number]),
+        ),
       })),
     [controllers, geom],
   )
@@ -388,6 +250,7 @@ export default function Plot3D(props: Plot3DProps) {
     >
       <Canvas
         orthographic
+        shadows
         onPointerMissed={() => onSelectDevice(null)}
         dpr={[1, 2]}
         camera={{ position: [8, 8, 8], zoom: 40, near: -100, far: 200 }}
@@ -395,26 +258,28 @@ export default function Plot3D(props: Plot3DProps) {
         aria-label={label}
         gl={{ antialias: true, powerPreference: 'default' }}
       >
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[6, 9, 4]} intensity={1.1} />
+        <ambientLight intensity={0.75} />
+        <directionalLight
+          position={[6, 9, 4]}
+          intensity={1.1}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-7}
+          shadow-camera-right={7}
+          shadow-camera-top={7}
+          shadow-camera-bottom={-7}
+          shadow-camera-near={0.5}
+          shadow-camera-far={30}
+          shadow-bias={-0.0005}
+        />
 
-        {/* tanah dan air sawah */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-          <planeGeometry args={[HALF * 2 + 1.6, HALF * 2 + 1.6]} />
-          <meshStandardMaterial color="#6D4C41" roughness={1} />
-        </mesh>
-        {hasWater(phaseSeq) && (
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-            <planeGeometry args={[HALF * 2 + 1.6, HALF * 2 + 1.6]} />
-            <meshStandardMaterial color="#4FC3F7" transparent opacity={0.45} roughness={0.2} metalness={0.1} depthWrite={false} />
-          </mesh>
-        )}
+        {/* alas tanah, pematang di tepi, lumpur dan air biru di tengah sawah */}
+        <FieldBase flooded={hasWater(phaseSeq)} />
 
-        <Blades hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} />
-        {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
+        <RiceCanopy hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} flowering={flowering} grainColor={grainColor(phaseSeq)} />
 
         {kits.map(({ c, xz }) => (
-          <StationKit
+          <StationKitModel
             key={c.dev_id}
             controller={c}
             position={xz}
@@ -460,7 +325,7 @@ export default function Plot3D(props: Plot3DProps) {
         })}
 
         {SAMPLES.map(([x, z], i) => (
-          <mesh key={i} position={[x, 0.06, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
+          <mesh key={i} position={[x, 0.13, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
             <sphereGeometry args={[0.06, 10, 10]} />
             <meshStandardMaterial color="#FFFFFF" />
           </mesh>
