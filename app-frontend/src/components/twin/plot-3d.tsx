@@ -136,8 +136,8 @@ const UP = new THREE.Vector3(0, 1, 0)
 type Controls = React.ElementRef<typeof OrbitControls>
 
 /** Luas cuplikan di layar pada zoom 1 (satuan dunia): lebar diagonal petak + label, dan tinggi miring + tiang Station Kit 2,9 m. */
-const FIT_WIDTH = 11.2
-const FIT_HEIGHT = 9.2
+const FIT_WIDTH = 9.6
+const FIT_HEIGHT = 8.2
 
 /**
  * Zoom awal menyesuaikan ukuran kanvas dan area yang tidak tertutup panel, supaya cuplikan 6 x 6 m dan tiangnya
@@ -325,7 +325,7 @@ export default function Plot3D(props: Plot3DProps) {
         })}
 
         {SAMPLES.map(([x, z], i) => (
-          <mesh key={i} position={[x, 0.13, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
+          <mesh key={i} position={[x, 0.13, z]} onPointerOver={() => setHover(`Titik pengamatan warna daun ${i + 1}`)} onPointerOut={() => setHover(null)}>
             <sphereGeometry args={[0.06, 10, 10]} />
             <meshStandardMaterial color="#FFFFFF" />
           </mesh>

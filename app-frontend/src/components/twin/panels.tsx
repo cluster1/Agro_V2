@@ -54,10 +54,10 @@ function GrowthChart({
             <XAxis dataKey="age" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}`} />
             <YAxis tick={{ fontSize: 11 }} width={44} />
             <Tooltip
-              formatter={(value: number, name: string) => [formatNumber(Number(value)), name === 'ref' ? 'Acuan' : 'Observasi']}
-              labelFormatter={(label) => `HST ${label}`}
+              formatter={(value: number, name: string) => [formatNumber(Number(value)), name === 'ref' ? 'Standar' : 'Pengamatan']}
+              labelFormatter={(label) => `Umur ${label} hari`}
             />
-            <Legend formatter={(v) => (v === 'ref' ? 'Acuan varietas' : 'Observasi')} wrapperStyle={{ fontSize: 11 }} />
+            <Legend formatter={(v) => (v === 'ref' ? 'Standar varietas' : 'Pengamatan')} wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="ref" stroke={REF_COLOR} strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line type="monotone" dataKey="obs" stroke={OBS_COLOR} strokeWidth={0} dot={{ r: 4, fill: OBS_COLOR }} isAnimationActive={false} connectNulls={false} />
             {age !== null && age >= 0 && age <= maxAge && <ReferenceLine x={age} stroke="currentColor" strokeDasharray="4 2" />}
@@ -68,7 +68,7 @@ function GrowthChart({
   )
 }
 
-/** F-MDL-02: indeks pertumbuhan dan grafik tinggi/anakan aktual vs acuan; kursor mengikuti slider. */
+/** F-MDL-02: indeks pertumbuhan dan grafik tinggi/anakan hasil pengamatan vs standar; kursor mengikuti slider. */
 export function GrowthPanel({ twin, age }: GrowthPanelProps) {
   const { growth, observations, reference } = twin
   const maxAge = Math.max(60, ...(reference.height ?? []).map((p) => p.age), twin.variety?.maturity ?? 0)
@@ -84,29 +84,29 @@ export function GrowthPanel({ twin, age }: GrowthPanelProps) {
           {growth.index !== null ? (
             <Badge variant={growth.stunted ? 'destructive' : 'success'} className="gap-1 tabular-nums">
               {growth.stunted ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />}
-              Indeks {formatNumber(growth.index)} · {growth.stunted ? 'terhambat' : 'normal'}
+              Pertumbuhan {formatNumber(growth.index)} · {growth.stunted ? 'terhambat' : 'normal'}
             </Badge>
           ) : (
-            <Badge variant="secondary">Perlu observasi</Badge>
+            <Badge variant="secondary">Perlu pengamatan</Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        {growth.stunted && <p className="text-sm text-destructive">Indeks di bawah 0,85: konfirmasi gejala kerdil di lapangan.</p>}
+        {growth.stunted && <p className="text-sm text-destructive">Pertumbuhan di bawah 0,85 (kerdil): periksa tanaman di lapangan.</p>}
         <GrowthChart title="Tinggi tanaman" unit="cm" curve={reference.height} observations={observations} field="height" age={age} maxAge={maxAge} />
         <GrowthChart title="Anakan per rumpun" unit="batang" curve={reference.tiller} observations={observations} field="tiller" age={age} maxAge={maxAge} />
         <p className="text-sm text-muted-foreground tabular-nums">
           {age !== null && hRef !== null && tRef !== null && (
             <>
-              Acuan pada HST {age}: tinggi {formatNumber(hRef)} cm, anakan {formatNumber(tRef)}.{' '}
+              Standar pada umur {age} hari: tinggi {formatNumber(hRef)} cm, anakan {formatNumber(tRef)}.{' '}
             </>
           )}
           {latest && (
             <>
-              Observasi terakhir ({formatDateTime(latest.date, 'dd MMM')}): tinggi {latest.height ?? '-'} cm, anakan {latest.tiller ?? '-'}.
+              Pengamatan terakhir ({formatDateTime(latest.date, 'dd MMM')}): tinggi {latest.height ?? '-'} cm, anakan {latest.tiller ?? '-'}.
             </>
           )}
-          {!latest && 'Belum ada observasi tersimpan.'}
+          {!latest && 'Belum ada pengamatan tersimpan.'}
         </p>
       </CardContent>
     </Card>
@@ -120,29 +120,29 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
   const meta = N_STATUS[status]
   const rows: { label: string; value: number | null; unit: string }[] = [
     { label: 'Nitrogen (N)', value: nutrients.n_def, unit: 'kg N/ha' },
-    { label: 'Fosfor (P₂O₅)', value: nutrients.p2o5_def, unit: 'kg/ha' },
-    { label: 'Kalium (K₂O)', value: nutrients.k2o_def, unit: 'kg/ha' },
+    { label: 'Fosfor (P)', value: nutrients.p2o5_def, unit: 'kg/ha' },
+    { label: 'Kalium (K)', value: nutrients.k2o_def, unit: 'kg/ha' },
   ]
 
   return (
     <Card className="border-2">
       <CardHeader className="bg-muted/50">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle>Status hara</CardTitle>
+          <CardTitle>Kecukupan hara</CardTitle>
           <Badge variant="outline" className="gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: meta.color }} aria-hidden="true" />
-            N: {meta.label}
+            Nitrogen: {meta.label.toLowerCase()}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <p className="text-sm text-muted-foreground tabular-nums">
-          BWD terakhir {nutrients.bwd !== null ? String(nutrients.bwd).replace('.', ',') : '-'}
-          {reference.bwd_min !== null ? ` · batas fase ${reference.bwd_min}` : ' · fase ini tanpa batas BWD'}
+          Warna daun terakhir: skala {nutrients.bwd !== null ? String(nutrients.bwd).replace('.', ',') : '-'}
+          {reference.bwd_min !== null ? ` · minimal tahap ini: ${reference.bwd_min}` : ' · tahap ini tanpa batas warna daun'}
           {nutrients.soil_p && ` · tanah P ${nutrients.soil_p.toLowerCase()}, K ${(nutrients.soil_k ?? '').toLowerCase()}`}
         </p>
 
-        <ul className="space-y-2" aria-label="Defisit hara">
+        <ul className="space-y-2" aria-label="Kekurangan hara">
           {rows.map((r) => (
             <li key={r.label} className="flex items-center justify-between gap-3 rounded-md border p-3">
               <span className="text-sm font-medium">{r.label}</span>
@@ -184,7 +184,7 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
               {recommendation.start && <span className="font-normal text-muted-foreground tabular-nums">· {formatDateTime(recommendation.start, 'dd MMM yyyy')}</span>}
             </p>
             <p className="mt-1">{recommendation.description ?? recommendation.plan_value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Dosis awal dari model; wajib divalidasi penyuluh sebelum diterapkan.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Dosis awal dari sistem; mohon dicek penyuluh sebelum dipakai.</p>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Tidak ada rekomendasi pupuk saat ini.</p>
@@ -195,8 +195,19 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
 }
 
 const METHOD_LABEL: Record<string, string> = {
-  FAKTOR: 'Faktor (sebelum berbunga)',
-  KOMPONEN: 'Komponen hasil (setelah berbunga)',
+  FAKTOR: 'Perkiraan awal (dari rata-rata varietas dan kondisi tanaman)',
+  KOMPONEN: 'Dari hitungan malai dan gabah (lebih akurat)',
+}
+
+function confidenceLabel(c: number): string {
+  return c >= 0.8 ? 'tinggi' : c >= 0.6 ? 'sedang' : 'rendah'
+}
+
+/** Faktor pengali prediksi: 1 = tidak mengubah, di bawah 1 menurunkan hasil. */
+function factorLabel(f: number | null): string {
+  if (f === null) return '-'
+  if (f >= 0.995) return 'normal (tidak menurunkan hasil)'
+  return `menurunkan hasil ${formatNumber(Math.round((1 - f) * 100))}%`
 }
 
 /** F-MDL-06: prediksi hasil, rentang, rata-rata dan potensi varietas, faktor, metode, keyakinan. */
@@ -208,16 +219,16 @@ export function YieldPanel({ twin }: { twin: PlantTwin }) {
   return (
     <Card className="border-2">
       <CardHeader className="bg-muted/50">
-        <CardTitle>Prediksi hasil</CardTitle>
+        <CardTitle>Perkiraan hasil panen</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         {!y || y.value === null ? (
-          <p className="text-sm text-muted-foreground">Belum ada prediksi. Jalankan simulasi untuk menghitungnya.</p>
+          <p className="text-sm text-muted-foreground">Belum ada perkiraan. Klik "Hitung perkiraan" untuk menghitungnya.</p>
         ) : (
           <>
             <div className="flex flex-wrap items-baseline gap-x-3">
               <span className="text-4xl font-bold tabular-nums">{formatNumber(y.value)}</span>
-              <span className="text-muted-foreground">t/ha GKG</span>
+              <span className="text-muted-foreground">ton/ha gabah kering</span>
               {y.low !== null && y.high !== null && (
                 <span className="text-sm text-muted-foreground tabular-nums">
                   rentang {formatNumber(y.low)}-{formatNumber(y.high)}
@@ -225,39 +236,79 @@ export function YieldPanel({ twin }: { twin: PlantTwin }) {
               )}
             </div>
 
-            <div
-              className="relative h-3 w-full rounded-full bg-muted"
-              role="img"
-              aria-label={`Prediksi ${y.value} t/ha, rentang ${y.low} sampai ${y.high}, rata-rata varietas ${y.avg}, potensi ${y.potential}`}
-            >
-              {y.low !== null && y.high !== null && (
-                <div className="absolute h-3 rounded-full bg-primary/40" style={{ left: pos(y.low), width: `calc(${pos(y.high)} - ${pos(y.low)})` }} />
-              )}
-              <div className="absolute -top-1 h-5 w-1 rounded bg-primary" style={{ left: pos(y.value) }} />
-              {y.avg !== null && <div className="absolute -top-0.5 h-4 w-0.5 bg-foreground/70" style={{ left: pos(y.avg) }} title="Rata-rata varietas" />}
-              {y.potential !== null && <div className="absolute -top-0.5 h-4 w-0.5 bg-foreground/40" style={{ left: pos(y.potential) }} title="Potensi varietas" />}
-            </div>
-            <div className="flex flex-wrap gap-x-4 text-xs text-muted-foreground tabular-nums">
-              <span>Rata-rata varietas {y.avg !== null ? formatNumber(y.avg) : '-'}</span>
-              <span>Potensi {y.potential !== null ? formatNumber(y.potential) : '-'}</span>
+            {y.low !== null && y.high !== null && (
+              <p className="text-sm">
+                Hasil panen diperkirakan antara <strong className="tabular-nums">{formatNumber(y.low)}</strong> dan{' '}
+                <strong className="tabular-nums">{formatNumber(y.high)}</strong> ton/ha.
+              </p>
+            )}
+
+            <div className="space-y-1.5">
+              <div
+                className="relative h-3 w-full rounded-full bg-muted"
+                role="img"
+                aria-label={`Perkiraan ${y.value} ton/ha, rentang ${y.low} sampai ${y.high}, rata-rata varietas ${y.avg}, potensi ${y.potential}`}
+              >
+                {y.low !== null && y.high !== null && (
+                  <div className="absolute h-3 rounded-full bg-primary/40" style={{ left: pos(y.low), width: `calc(${pos(y.high)} - ${pos(y.low)})` }} />
+                )}
+                {y.avg !== null && <div className="absolute -top-0.5 h-4 w-0.5 bg-foreground/70" style={{ left: pos(y.avg) }} />}
+                {y.potential !== null && <div className="absolute -top-0.5 h-4 w-0 border-l-2 border-dashed border-foreground/60" style={{ left: pos(y.potential) }} />}
+                <div className="absolute -top-1 h-5 w-1 rounded bg-primary" style={{ left: pos(y.value) }} />
+              </div>
+              <div className="flex justify-between text-[11px] text-muted-foreground tabular-nums" aria-hidden="true">
+                <span>0</span>
+                <span>{formatNumber(max)} ton/ha</span>
+              </div>
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <li className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-4 rounded-full bg-primary/40" aria-hidden="true" />
+                  Rentang kemungkinan
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className="h-3.5 w-1 rounded bg-primary" aria-hidden="true" />
+                  <span>
+                    Perkiraan <span className="tabular-nums">{formatNumber(y.value)}</span>
+                  </span>
+                </li>
+                {y.avg !== null && (
+                  <li className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-0.5 bg-foreground/70" aria-hidden="true" />
+                    <span>
+                      Rata-rata varietas <span className="tabular-nums">{formatNumber(y.avg)}</span>
+                      {Math.abs(y.avg - y.value) < max * 0.03 && ' (berhimpit dengan perkiraan)'}
+                    </span>
+                  </li>
+                )}
+                {y.potential !== null && (
+                  <li className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-0 border-l-2 border-dashed border-foreground/60" aria-hidden="true" />
+                    <span>
+                      Potensi varietas <span className="tabular-nums">{formatNumber(y.potential)}</span>
+                    </span>
+                  </li>
+                )}
+              </ul>
             </div>
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <dt className="text-muted-foreground">Metode</dt>
+              <dt className="text-muted-foreground">Cara hitung</dt>
               <dd>{METHOD_LABEL[y.method ?? ''] ?? y.method ?? '-'}</dd>
-              <dt className="text-muted-foreground">Keyakinan</dt>
-              <dd className="tabular-nums">{y.confidence !== null ? `${Math.round(y.confidence * 100)}%` : '-'}</dd>
+              <dt className="text-muted-foreground">Tingkat kepastian</dt>
+              <dd className="tabular-nums">{y.confidence !== null ? `${Math.round(y.confidence * 100)}% (${confidenceLabel(y.confidence)})` : '-'}</dd>
               {y.factors && (
                 <>
-                  <dt className="text-muted-foreground">Faktor</dt>
-                  <dd className="tabular-nums">
-                    pertumbuhan {formatNumber(y.factors.f_growth)} · N {formatNumber(y.factors.f_n)} · hama {formatNumber(y.factors.f_pest)}
-                  </dd>
+                  <dt className="text-muted-foreground">Pengaruh pertumbuhan</dt>
+                  <dd>{factorLabel(y.factors.f_growth)}</dd>
+                  <dt className="text-muted-foreground">Pengaruh hara N</dt>
+                  <dd>{factorLabel(y.factors.f_n)}</dd>
+                  <dt className="text-muted-foreground">Pengaruh hama</dt>
+                  <dd>{factorLabel(y.factors.f_pest)}</dd>
                 </>
               )}
               {y.harvest_date && (
                 <>
-                  <dt className="text-muted-foreground">Panen proyeksi</dt>
+                  <dt className="text-muted-foreground">Perkiraan panen</dt>
                   <dd className="tabular-nums">{formatDateTime(y.harvest_date, 'dd MMM yyyy')}</dd>
                 </>
               )}

@@ -5,37 +5,37 @@ import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Cpu, Radio } from 
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { N_STATUS, paramState, type DeviceSummary, type PlantTwin, type SceneSelection, type SensorParam } from '@/lib/twin'
 
-/** Panel status hara di atas model: status N (BWD pada tanggal slider) dan defisit N, P₂O₅, K₂O dari model. */
+/** Panel kecukupan hara di atas model: status N (warna daun pada tanggal slider) dan kekurangan N, P, K dari model. */
 export function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof N_STATUS; bwd: number | null; bwdMin: number | null; nutrients: PlantTwin['nutrients'] }) {
   const [open, setOpen] = useState(true)
   const meta = N_STATUS[status]
   const rows = [
     { label: 'N', value: nutrients.n_def, unit: 'kg N/ha' },
-    { label: 'P₂O₅', value: nutrients.p2o5_def, unit: 'kg/ha' },
-    { label: 'K₂O', value: nutrients.k2o_def, unit: 'kg/ha' },
+    { label: 'P', value: nutrients.p2o5_def, unit: 'kg/ha' },
+    { label: 'K', value: nutrients.k2o_def, unit: 'kg/ha' },
   ]
   return (
-    <div className="rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
+    <div className="rounded-md border bg-background/90 text-[11px] shadow backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="twin-hud-nutrient"
-        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 font-medium"
+        className="flex min-h-9 w-full items-center justify-between gap-2 px-2.5 py-1 font-medium"
       >
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full border" style={{ backgroundColor: meta.color }} aria-hidden="true" />
-          Status hara · N {meta.label}
+          Kecukupan hara · nitrogen {meta.label.toLowerCase()}
         </span>
         {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
       </button>
       {open && (
-        <div id="twin-hud-nutrient" className="space-y-1.5 border-t px-3 py-2">
+        <div id="twin-hud-nutrient" className="space-y-1 border-t px-2.5 py-1.5">
           <p className="tabular-nums text-muted-foreground">
-            BWD {bwd !== null ? String(bwd).replace('.', ',') : '-'}
-            {bwdMin !== null ? ` · batas fase ${bwdMin}` : ' · fase tanpa batas BWD'}
+            Warna daun: skala {bwd !== null ? String(bwd).replace('.', ',') : '-'}
+            {bwdMin !== null ? ` · minimal tahap ini: ${bwdMin}` : ' · tahap ini tanpa batas warna daun'}
           </p>
-          <ul aria-label="Defisit hara dari model" className="space-y-0.5">
+          <ul aria-label="Kekurangan hara menurut sistem" className="space-y-0.5">
             {rows.map((r) => (
               <li key={r.label} className="flex items-center justify-between gap-3">
                 <span className="font-medium">{r.label}</span>
@@ -64,7 +64,7 @@ export function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof 
 function ParamRow({ p }: { p: SensorParam }) {
   const st = paramState(p)
   const bad = st === 'low' || st === 'high'
-  const title = `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}${p.read_at ? ` · dibaca ${formatDateTime(p.read_at)}` : ''}`
+  const title = `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}${p.read_at ? ` · diukur ${formatDateTime(p.read_at)}` : ''}`
   return (
     <li className="flex items-center justify-between gap-2" title={title}>
       <span className="truncate text-muted-foreground">{p.name}</span>
@@ -104,14 +104,14 @@ function HudBox({
     </>
   )
   return (
-    <section aria-label={title} className={`shrink-0 rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm ${selected ? 'border-2 border-amber-500' : ''}`}>
+    <section aria-label={title} className={`shrink-0 rounded-md border bg-background/90 text-[11px] shadow backdrop-blur-sm ${selected ? 'border-2 border-amber-500' : ''}`}>
       <div className="flex items-stretch">
         {onSelect ? (
-          <button type="button" onClick={onSelect} aria-pressed={selected} className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5 text-left">
+          <button type="button" onClick={onSelect} aria-pressed={selected} className="flex min-h-9 min-w-0 flex-1 items-center gap-1.5 px-2.5 py-1 text-left">
             {head}
           </button>
         ) : (
-          <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5">{head}</div>
+          <div className="flex min-h-9 min-w-0 flex-1 items-center gap-1.5 px-2.5 py-1">{head}</div>
         )}
         <button
           type="button"
@@ -119,13 +119,13 @@ function HudBox({
           aria-expanded={open}
           aria-controls={id}
           aria-label={`${open ? 'Lipat' : 'Buka'} ${title}`}
-          className="flex min-h-11 w-11 shrink-0 items-center justify-center"
+          className="flex min-h-9 w-9 shrink-0 items-center justify-center"
         >
           {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
         </button>
       </div>
       {open && (
-        <div id={id} className="space-y-1 border-t px-3 py-2">
+        <div id={id} className="space-y-0.5 border-t px-2.5 py-1.5">
           {children}
         </div>
       )}
@@ -139,7 +139,7 @@ export function DeviceHud({ devices, selected, onSelect }: { devices: DeviceSumm
   if (devices.length === 0) {
     return (
       <HudBox id="twin-hud-empty" icon={<Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />} title="Perangkat & sensor">
-        <p className="text-muted-foreground">Belum ada perangkat di cluster petak ini.</p>
+        <p className="text-muted-foreground">Belum ada perangkat di kelompok petak ini.</p>
       </HudBox>
     )
   }

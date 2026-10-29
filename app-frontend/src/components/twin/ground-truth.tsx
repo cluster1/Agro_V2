@@ -61,7 +61,7 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
     <Card className="border-2">
       <CardHeader className="bg-muted/50">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle>Gambar lapangan</CardTitle>
+          <CardTitle>Foto lapangan</CardTitle>
           <div className="flex gap-1" role="group" aria-label="Filter gambar">
             {filters.map((f) => (
               <Button key={f.value} type="button" size="sm" variant={filter === f.value ? 'default' : 'outline'} aria-pressed={filter === f.value} onClick={() => setFilter(f.value)}>
@@ -76,7 +76,7 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <ImageOff className="mb-3 h-10 w-10 text-muted-foreground opacity-60" aria-hidden="true" />
             <p className="font-medium">Belum ada gambar</p>
-            <p className="mt-1 text-sm text-muted-foreground">Foto kegiatan dan observasi petak ini akan tampil di sini.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Foto kegiatan dan pengamatan petak ini akan tampil di sini.</p>
           </div>
         ) : (
           <>
@@ -97,13 +97,13 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
                   )}
                   {projected && (
                     <Badge variant="warning" className="absolute left-2 top-2">
-                      Proyeksi: gambar terakhir
+                      Perkiraan: foto terakhir
                     </Badge>
                   )}
                 </div>
                 <figcaption className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground tabular-nums">
                   <span>{mediaDay ? formatDateTime(mediaDay, 'dd MMM yyyy') : '-'}</span>
-                  {selected.age !== null && <span>· HST {selected.age}</span>}
+                  {selected.age !== null && <span>· umur {selected.age} hari</span>}
                   <Badge variant="outline">{isCctv(selected) ? 'CCTV' : 'Foto'}</Badge>
                   {selected.description && <span className="truncate">· {selected.description}</span>}
                 </figcaption>
@@ -142,16 +142,16 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
 
             <div className="overflow-hidden rounded-md border text-sm">
               <table className="w-full">
-                <caption className="sr-only">Perbandingan model dan petugas pada tanggal gambar</caption>
+                <caption className="sr-only">Perbandingan sistem dan petugas pada tanggal foto</caption>
                 <thead className="bg-muted/50 text-left">
                   <tr>
                     <th scope="col" className="px-3 py-2 font-semibold">Sumber</th>
-                    <th scope="col" className="px-3 py-2 font-semibold">Fase / BWD</th>
+                    <th scope="col" className="px-3 py-2 font-semibold">Tahap / warna daun</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-t">
-                    <th scope="row" className="px-3 py-2 text-left font-medium">Model</th>
+                    <th scope="row" className="px-3 py-2 text-left font-medium">Sistem</th>
                     <td className="px-3 py-2">{verdict.model}</td>
                   </tr>
                   <tr className="border-t">
@@ -162,9 +162,9 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
                     <th scope="row" className="px-3 py-2 text-left font-medium">Status</th>
                     <td className="px-3 py-2">
                       {verdict.status === 'NONE' ? (
-                        <span className="text-muted-foreground">Belum ada observasi pada tanggal ini</span>
+                        <span className="text-muted-foreground">Belum ada pengamatan pada tanggal ini</span>
                       ) : (
-                        <Badge variant={verdict.status === 'MATCH' ? 'success' : 'destructive'}>{verdict.status === 'MATCH' ? 'Sesuai' : 'Selisih'}</Badge>
+                        <Badge variant={verdict.status === 'MATCH' ? 'success' : 'destructive'}>{verdict.status === 'MATCH' ? 'Cocok' : 'Beda'}</Badge>
                       )}
                     </td>
                   </tr>
@@ -172,9 +172,9 @@ export function GroundTruth({ twin, day, follow, selectedMediaId, onSelect }: Gr
               </table>
             </div>
             <p className="text-xs text-muted-foreground">
-              Sesuai bila fase sama atau selisih BWD ≤ 0,3.{' '}
+              Cocok bila tahap tumbuh sama atau warna daun beda tidak lebih dari 0,3.{' '}
               <Link href="/observations" className="underline underline-offset-2">
-                Buka observasi untuk memverifikasi
+                Buka pengamatan untuk memeriksa
               </Link>
               .
             </p>

@@ -171,7 +171,7 @@ export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseCo
     }
     layers.current = g
     L.control
-      .layers(undefined, { Petak: g.plots, 'Titik sampel BWD': g.samples, Foto: g.photos, Perangkat: g.devices, Sensor: g.sensors, Site: g.sites }, { collapsed: true })
+      .layers(undefined, { Petak: g.plots, 'Titik pengamatan warna daun': g.samples, Foto: g.photos, Perangkat: g.devices, Sensor: g.sensors, Lokasi: g.sites }, { collapsed: true })
       .addTo(map)
 
     // zoom roda hanya setelah peta diaktifkan, supaya halaman tetap bisa di-scroll
@@ -212,7 +212,7 @@ export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseCo
     }
 
     scene.samples.forEach(([lat, lon], i) =>
-      L.circleMarker([lat, lon], { radius: 3, color: '#212121', weight: 1, fillColor: '#fff', fillOpacity: 1 }).bindTooltip(`Titik sampel BWD ${i + 1}`).addTo(g.samples),
+      L.circleMarker([lat, lon], { radius: 3, color: '#212121', weight: 1, fillColor: '#fff', fillOpacity: 1 }).bindTooltip(`Titik pengamatan warna daun ${i + 1}`).addTo(g.samples),
     )
 
     scene.photos.forEach(({ m, coord }) => {
@@ -240,7 +240,7 @@ export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseCo
         .addTo(g.sensors),
     )
     scene.sites.forEach(({ s, coord }) =>
-      L.marker([coord.lat, coord.lon], { icon: createMarkerIcon('site'), title: `Site: ${s.name ?? s.site_id}`, alt: `Site: ${s.name ?? s.site_id}`, keyboard: true })
+      L.marker([coord.lat, coord.lon], { icon: createMarkerIcon('site'), title: `Lokasi: ${s.name ?? s.site_id}`, alt: `Lokasi: ${s.name ?? s.site_id}`, keyboard: true })
         .bindPopup(popup('site', s.name ?? s.site_id, coord))
         .addTo(g.sites),
     )
@@ -279,7 +279,7 @@ export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseCo
       <div
         ref={box}
         role="region"
-        aria-label={`Peta petak ${selected?.name ?? selected?.plant_id ?? ''}${mode === 'nitrogen' ? `, status N ${N_STATUS[status].label}` : ''}`}
+        aria-label={`Peta petak ${selected?.name ?? selected?.plant_id ?? ''}${mode === 'nitrogen' ? `, kecukupan nitrogen ${N_STATUS[status].label}` : ''}`}
         className="z-0 h-[420px] w-full rounded-lg border bg-muted/30"
       />
       {tilesFailed && (
@@ -301,17 +301,17 @@ export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseCo
             </span>
           ))
         ) : (
-          <span>Warna petak terpilih mengikuti BWD terakhir; petak lain mengikuti fase.</span>
+          <span>Warna petak terpilih mengikuti warna daun terakhir; petak lain mengikuti tahap tumbuh.</span>
         )}
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded-full border border-foreground bg-white" aria-hidden="true" />
-          Titik sampel BWD
+          Titik pengamatan warna daun
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded-full" style={{ backgroundColor: PIN_COLOR }} aria-hidden="true" />
           Foto
         </span>
-        <span>Foto, perangkat, dan sensor tanpa koordinat dipasang di titik petak atau site.</span>
+        <span>Foto, perangkat, dan sensor tanpa koordinat dipasang di titik petak atau lokasi.</span>
       </figcaption>
     </figure>
   )

@@ -472,8 +472,8 @@ export function compareTruth(
   const bwdClose = observation.bwd !== null && modelBwd !== null && Math.abs(observation.bwd - modelBwd) <= 0.3
   return {
     status: samePhase || bwdClose ? 'MATCH' : 'DIFF',
-    officer: [observation.phase_id ? `fase ${observation.phase_id}` : null, observation.bwd !== null ? `BWD ${observation.bwd}` : null].filter(Boolean).join(', ') || '-',
-    model: [modelPhase.name, modelBwd !== null ? `BWD ${modelBwd}` : null].filter(Boolean).join(', '),
+    officer: [observation.phase_id ? `tahap ${observation.phase_id}` : null, observation.bwd !== null ? `warna daun ${observation.bwd}` : null].filter(Boolean).join(', ') || '-',
+    model: [modelPhase.name, modelBwd !== null ? `warna daun ${modelBwd}` : null].filter(Boolean).join(', '),
   }
 }
 

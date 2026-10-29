@@ -53,7 +53,7 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
   const [panelsOpen, setPanelsOpen] = useState(true)
   const wide = useMinWidth(1024)
   // bagian kanvas yang tertutup panel mengambang; model dipasang di area bebas sisanya
-  const insets = useMemo(() => (wide ? { top: 48, right: panelsOpen ? 352 : 64, bottom: 12, left: 12 } : { top: 0, right: 0, bottom: 0, left: 0 }), [wide, panelsOpen])
+  const insets = useMemo(() => (wide ? { top: 60, right: panelsOpen ? 268 : 64, bottom: 12, left: 12 } : { top: 0, right: 0, bottom: 0, left: 0 }), [wide, panelsOpen])
   const devices = useMemo(() => deviceSummaries(scene.controllers, twin.sensors), [scene.controllers, twin.sensors])
   const bwdMin = twin.reference.bwd_min
   const status = nStatus(bwd, bwdMin)
@@ -88,17 +88,17 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
         </div>
 
         <div className="space-y-3 p-3 lg:pointer-events-none lg:absolute lg:inset-0 lg:space-y-0 lg:p-0">
-          <div className={`lg:pointer-events-auto lg:absolute lg:top-3 ${panelsOpen ? 'lg:right-[19.5rem]' : 'lg:right-3'}`}>
+          <div className={`lg:pointer-events-auto lg:absolute lg:top-3 ${panelsOpen ? 'lg:right-[15.5rem]' : 'lg:right-3'}`}>
             <StageToolbar api={api} panelsOpen={panelsOpen} onTogglePanels={() => setPanelsOpen((v) => !v)} panelsId="twin-stage-panels" />
           </div>
 
           {panelsOpen && (
             <div id="twin-stage-panels" className="space-y-3 lg:space-y-0">
-              <div className="lg:pointer-events-auto lg:absolute lg:left-3 lg:right-[23.5rem] lg:top-3">
+              <div className="lg:pointer-events-auto lg:absolute lg:left-3 lg:right-[19.5rem] lg:top-3">
                 <StageKpis twin={twin} age={age} phase={phaseAtDay} bwd={bwd} isProjection={isProjection} />
               </div>
 
-              <div className="flex flex-col gap-2 lg:pointer-events-auto lg:absolute lg:bottom-3 lg:right-3 lg:top-3 lg:w-72 lg:overflow-y-auto">
+              <div className="flex flex-col gap-2 lg:pointer-events-auto lg:absolute lg:bottom-3 lg:right-3 lg:top-3 lg:w-60 lg:overflow-y-auto">
                 <PlotCard twin={twin} />
                 <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={twin.nutrients} />
                 <DeviceHud devices={devices} selected={picked} onSelect={onPick} />
@@ -114,8 +114,8 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
         </div>
       </div>
       <figcaption className="text-center text-xs text-muted-foreground">
-        Cuplikan 6 × 6 m, jajar legowo 2:1; bukan skala petak. Geser untuk memutar, gulir atau tombol zoom untuk memperbesar. Tinggi {Math.round(heightNow)} cm, {Math.round(tillerNow)} anakan per rumpun.
-        {` Status N ${N_STATUS[status].label.toLowerCase()}.`}
+        Cuplikan 6 × 6 m dengan pola tanam jajar legowo; bukan ukuran petak sebenarnya. Geser untuk memutar, gulir atau tombol zoom untuk memperbesar. Tinggi {Math.round(heightNow)} cm, {Math.round(tillerNow)} anakan per rumpun.
+        {` Nitrogen ${N_STATUS[status].label.toLowerCase()}.`}
         {hasWater(currentSeq) ? ' Sawah tergenang.' : ' Sawah sudah dikeringkan.'}
       </figcaption>
     </figure>

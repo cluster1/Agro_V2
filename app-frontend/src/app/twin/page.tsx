@@ -97,9 +97,9 @@ export default function TwinPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['twin'] })
       queryClient.invalidateQueries({ queryKey: ['schedules'] })
-      toast.success('Simulasi selesai')
+      toast.success('Perkiraan selesai dihitung')
     },
-    onError: (error: any) => toast.error(apiErrorMessage(error, 'Gagal menjalankan simulasi')),
+    onError: (error: any) => toast.error(apiErrorMessage(error, 'Gagal menghitung perkiraan')),
   })
 
   const range = useMemo(() => (twin ? sliderRange(twin) : null), [twin])
@@ -140,7 +140,7 @@ export default function TwinPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <PageTitle>Digital Twin</PageTitle>
-            <p className="mt-1 text-muted-foreground">Kondisi petak padi, aktual dan proyeksi sampai panen</p>
+            <p className="mt-1 text-muted-foreground">Kondisi petak padi saat ini dan perkiraan sampai panen</p>
           </div>
           {canRun && plantId && (
             <div className="flex flex-wrap items-end gap-2">
@@ -150,7 +150,7 @@ export default function TwinPage() {
                 ) : (
                   <Play className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                Jalankan simulasi
+                Hitung perkiraan
               </Button>
             </div>
           )}
@@ -193,13 +193,13 @@ export default function TwinPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label id="twin-mode-label">Mode warna</Label>
+                <Label id="twin-mode-label">Warna petak</Label>
                 <div className="flex gap-1" role="group" aria-labelledby="twin-mode-label">
                   <Button type="button" variant={mode === 'visual' ? 'default' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => setMode('visual')}>
-                    Visual
+                    Warna asli
                   </Button>
                   <Button type="button" variant={mode === 'nitrogen' ? 'default' : 'outline'} aria-pressed={mode === 'nitrogen'} onClick={() => setMode('nitrogen')}>
-                    Status N
+                    Kecukupan nitrogen
                   </Button>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function TwinPage() {
                       <Badge variant="secondary" className="gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full border" style={{ backgroundColor: twin.now.phase.color ?? undefined }} aria-hidden="true" />
                         {twin.now.phase.name}
-                        {twin.now.age !== null && <span className="tabular-nums">· HST {twin.now.age}</span>}
+                        {twin.now.age !== null && <span className="tabular-nums">· umur {twin.now.age} hari</span>}
                       </Badge>
                     )}
                   </div>
@@ -235,11 +235,11 @@ export default function TwinPage() {
               <CardContent className="space-y-5 pt-5">
                 {!twin.simulation && (
                   <p className="rounded-md border border-warning/50 bg-warning/10 p-3 text-sm">
-                    Belum ada simulasi untuk petak ini, jadi fase di bawah memakai data tanaman saja.{' '}
-                    {canRun ? 'Klik "Jalankan simulasi" untuk menghitung proyeksi.' : 'Minta admin atau agronom menjalankan simulasi.'}
+                    Perkiraan belum dihitung untuk petak ini, jadi tahap tumbuh memakai data tanaman saja.{' '}
+                    {canRun ? 'Klik "Hitung perkiraan" untuk menghitungnya.' : 'Minta admin atau agronom menghitung perkiraan.'}
                   </p>
                 )}
-                {twin.simulation?.note && <p className="text-sm text-muted-foreground">Catatan model: {twin.simulation.note}</p>}
+                {twin.simulation?.note && <p className="text-sm text-muted-foreground">Catatan sistem: {twin.simulation.note}</p>}
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex gap-1" role="group" aria-label="Tampilan petak">
@@ -252,7 +252,7 @@ export default function TwinPage() {
                   </div>
                   {view === '3d' && gl === false && (
                     <p role="status" className="text-sm text-muted-foreground">
-                      Browser ini tidak mendukung WebGL, jadi model 3D diganti peta.
+                      Browser ini tidak bisa menampilkan model 3D, jadi diganti peta.
                     </p>
                   )}
                 </div>
@@ -304,7 +304,7 @@ export default function TwinPage() {
                 />
                 {shownDay > addDays(twin.now.date, 0) && (
                   <p className="text-sm text-muted-foreground">
-                    Tanggal setelah hari ini adalah proyeksi model. Observasi dan BWD yang tampil adalah yang terakhir tercatat.
+                    Tanggal setelah hari ini adalah perkiraan sistem. Data pengamatan dan warna daun yang tampil adalah yang terakhir dicatat.
                   </p>
                 )}
               </CardContent>
@@ -329,7 +329,7 @@ export default function TwinPage() {
                   <p className="tabular-nums">
                     Terakhir ({formatDateTime(twin.weather.latest.date, 'dd MMM')}): {twin.weather.latest.tmin ?? '-'}-{twin.weather.latest.tmax ?? '-'} °C
                     {twin.weather.latest.rain != null && `, hujan ${twin.weather.latest.rain} mm`}
-                    {twin.weather.latest.rh != null && `, RH ${twin.weather.latest.rh}%`}
+                    {twin.weather.latest.rh != null && `, kelembapan ${twin.weather.latest.rh}%`}
                   </p>
                 ) : (
                   <p className="text-muted-foreground">Belum ada data cuaca aktual untuk site ini.</p>
