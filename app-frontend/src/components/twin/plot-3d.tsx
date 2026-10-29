@@ -2,12 +2,15 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Html, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { RotateCcw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { formatNumber } from '@/lib/format'
 import {
   N_STATUS,
+  paramState,
+  type PlantTwin,
   PIN_COLOR,
   PIN_COLOR_ACTIVE,
   grainColor,
@@ -37,6 +40,8 @@ export interface Plot3DProps {
   /** pengendali (kamera menyatu dengannya) dan sensor, diposisikan dari koordinat tabel sensor */
   controllers: SceneController[]
   sensors: SceneSensor[]
+  /** defisit hara dari model (kg/ha), untuk panel status hara di atas model */
+  nutrients: PlantTwin['nutrients']
   /** pengendali atau sensor yang diklik; disorot dan infonya ditampilkan di luar kanvas */
   selected: SceneSelection | null
   onSelectDevice: (selection: SceneSelection | null) => void
@@ -191,6 +196,95 @@ function StationKit({
   )
 }
 
+/** Label data sensor yang melayang di atas sensornya: nama dan sampai dua parameter terbaca. */
+function SensorLabel({ sensor, active, onSelect }: { sensor: SceneSensor; active: boolean; onSelect: () => void }) {
+  const shown = sensor.params.slice(0, 2)
+  const outOfRange = sensor.params.some((p) => {
+    const st = paramState(p)
+    return st === 'low' || st === 'high'
+  })
+  return (
+    <Html position={[0, 0.5, 0]} center zIndexRange={[10, 0]}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label={`Sensor ${sensor.name}${sensor.info ? `: ${sensor.info}` : ', belum ada data'}${outOfRange ? ', ada nilai di luar batas peringatan' : ''}`}
+        className={`flex max-w-[11rem] flex-col items-start gap-0.5 rounded-md border bg-background/90 px-2 py-1 text-left text-xs shadow-sm backdrop-blur-sm ${active ? 'border-2 border-amber-500' : ''}`}
+      >
+        <span className="flex w-full items-center gap-1 font-medium">
+          {outOfRange && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" aria-hidden="true" />}
+          <span className="truncate">{sensor.name}</span>
+        </span>
+        {shown.length === 0 ? (
+          <span className="text-muted-foreground">belum ada data</span>
+        ) : (
+          shown.map((p) => (
+            <span key={p.ds_id} className="w-full truncate tabular-nums text-muted-foreground" title={`${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}`}>
+              {p.name} <span className="font-medium text-foreground">{p.value === null ? '-' : formatNumber(p.value)}</span>
+            </span>
+          ))
+        )}
+      </button>
+    </Html>
+  )
+}
+
+/** Panel status hara di atas model: status N (BWD pada tanggal slider) dan defisit N, P₂O₅, K₂O dari model. */
+function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof N_STATUS; bwd: number | null; bwdMin: number | null; nutrients: PlantTwin['nutrients'] }) {
+  const [open, setOpen] = useState(true)
+  const meta = N_STATUS[status]
+  const rows = [
+    { label: 'N', value: nutrients.n_def, unit: 'kg N/ha' },
+    { label: 'P₂O₅', value: nutrients.p2o5_def, unit: 'kg/ha' },
+    { label: 'K₂O', value: nutrients.k2o_def, unit: 'kg/ha' },
+  ]
+  return (
+    <div className="absolute bottom-3 left-3 z-20 max-w-[min(18rem,calc(100%-9rem))] rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="twin-hud-nutrient"
+        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 font-medium"
+      >
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full border" style={{ backgroundColor: meta.color }} aria-hidden="true" />
+          Status hara · N {meta.label}
+        </span>
+        {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
+      </button>
+      {open && (
+        <div id="twin-hud-nutrient" className="space-y-1.5 border-t px-3 py-2">
+          <p className="tabular-nums text-muted-foreground">
+            BWD {bwd !== null ? String(bwd).replace('.', ',') : '-'}
+            {bwdMin !== null ? ` · batas fase ${bwdMin}` : ' · fase tanpa batas BWD'}
+          </p>
+          <ul aria-label="Defisit hara dari model" className="space-y-0.5">
+            {rows.map((r) => (
+              <li key={r.label} className="flex items-center justify-between gap-3">
+                <span className="font-medium">{r.label}</span>
+                {r.value === null ? (
+                  <span className="text-muted-foreground">belum dihitung</span>
+                ) : r.value > 0 ? (
+                  <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-destructive">
+                    <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                    kurang {formatNumber(r.value)} {r.unit}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 font-semibold text-success">
+                    <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                    cukup
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Peta lon/lat ke koordinat cuplikan [-HALF, HALF] berdasarkan kotak batas polygon petak. */
 function mapToPlot(geom: GeoJsonPolygon | null, lon: number, lat: number): [number, number] | null {
   const ring = ringOf(geom)
@@ -213,7 +307,8 @@ const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
 
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, selected, onSelectDevice, onSelectMedia, label } = props
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, nutrients, selected, onSelectDevice, onSelectMedia, label } = props
+  const [showLabels, setShowLabels] = useState(true)
   const [hoverState, setHoverState] = useState<{ label: string; clickable: boolean } | null>(null)
   const hover = hoverState?.label ?? null
   const setHover = (label: string | null, clickable = false) => setHoverState(label ? { label, clickable } : null)
@@ -318,6 +413,7 @@ export default function Plot3D(props: Plot3DProps) {
                     <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
                   </mesh>
                 )}
+                {showLabels && <SensorLabel sensor={s} active={active} onSelect={() => onSelectDevice({ kind: 'sensor', id: s.sens_id })} />}
               </group>
             )
           })}
@@ -362,11 +458,25 @@ export default function Plot3D(props: Plot3DProps) {
             {hover}
           </div>
         )}
+        <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={nutrients} />
+        {sensorSpots.length > 0 && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-pressed={showLabels}
+            className="absolute right-3 top-3 z-20 bg-background/90"
+            onClick={() => setShowLabels((v) => !v)}
+          >
+            <Tag className="mr-2 h-4 w-4" aria-hidden="true" />
+            Label sensor
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"
           variant="outline"
-          className="absolute bottom-3 right-3 bg-background/90"
+          className="absolute bottom-3 right-3 z-20 bg-background/90"
           onClick={() => controls.current?.reset?.()}
         >
           <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
