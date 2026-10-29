@@ -6,7 +6,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { N_STATUS, PIN_COLOR, PIN_COLOR_ACTIVE, grainColor, hasWater, leafColor, nStatus, ringOf, type GeoJsonPolygon, type TwinMedia } from '@/lib/twin'
+import { N_STATUS, PIN_COLOR, PIN_COLOR_ACTIVE, grainColor, hasWater, leafColor, nStatus, ringOf, type GeoJsonPolygon, type SceneController, type SceneSensor, type TwinMedia } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 
 export interface Plot3DProps {
@@ -20,7 +20,9 @@ export interface Plot3DProps {
   geom: GeoJsonPolygon | null
   media: TwinMedia[]
   selectedMediaId: string | null
-  sensors: { ds_id: string; dev_id: string; name: string; value: number | null }[]
+  /** pengendali (kamera menyatu dengannya) dan sensor, diposisikan dari koordinat tabel sensor */
+  controllers: SceneController[]
+  sensors: SceneSensor[]
   onSelectMedia: (id: string) => void
   label: string
 }
@@ -114,9 +116,11 @@ function Panicles({ hills, heightCm, color }: { hills: [number, number][]; heigh
   )
 }
 
-function StationKit({ onHover }: { onHover: (label: string | null) => void }) {
+/** Pengendali (Station Kit): tiang dan kotak kontrol; kamera yang tersimpan bersamanya dipasang di tiang yang sama. */
+function StationKit({ controller, position, onHover }: { controller: SceneController; position: [number, number]; onHover: (label: string | null) => void }) {
+  const label = `Station Kit ${controller.name}${controller.cameras.length ? ` · kamera: ${controller.cameras.join(', ')}` : ''}`
   return (
-    <group position={[-HALF - 0.4, 0, -HALF - 0.4]} onPointerOver={() => onHover('Station Kit')} onPointerOut={() => onHover(null)}>
+    <group position={[position[0], 0, position[1]]} onPointerOver={() => onHover(label)} onPointerOut={() => onHover(null)}>
       <mesh position={[0, 1, 0]}>
         <cylinderGeometry args={[0.03, 0.03, 2, 8]} />
         <meshStandardMaterial color="#616161" />
@@ -125,26 +129,12 @@ function StationKit({ onHover }: { onHover: (label: string | null) => void }) {
         <boxGeometry args={[0.35, 0.25, 0.2]} />
         <meshStandardMaterial color="#1565C0" />
       </mesh>
-    </group>
-  )
-}
-
-function Camera({ onHover }: { onHover: (label: string | null) => void }) {
-  return (
-    <group position={[HALF + 0.4, 0, -HALF - 0.4]} onPointerOver={() => onHover('Kamera CCTV')} onPointerOut={() => onHover(null)}>
-      <mesh position={[0, 1, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 2, 8]} />
-        <meshStandardMaterial color="#616161" />
-      </mesh>
-      <mesh position={[0, 2, 0]}>
-        <boxGeometry args={[0.25, 0.18, 0.3]} />
-        <meshStandardMaterial color="#212121" />
-      </mesh>
-      {/* area pandang */}
-      <mesh position={[-1.9, 1.2, 1.9]} rotation={[0.5, -0.78, 0]}>
-        <coneGeometry args={[1.6, 3.6, 4, 1, true]} />
-        <meshBasicMaterial color="#42A5F5" transparent opacity={0.12} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
+      {controller.cameras.length > 0 && (
+        <mesh position={[0.1, 2.13, 0.1]}>
+          <boxGeometry args={[0.22, 0.14, 0.26]} />
+          <meshStandardMaterial color="#212121" />
+        </mesh>
+      )}
     </group>
   )
 }
@@ -169,9 +159,9 @@ const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
   return [v, v]
 })
 
-/** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, Station Kit, kamera, sensor, titik sampel, pin foto. */
+/** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, sensors, onSelectMedia, label } = props
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, onSelectMedia, label } = props
   const [hover, setHover] = useState<string | null>(null)
   const controls = useRef<React.ElementRef<typeof OrbitControls>>(null)
 
@@ -186,6 +176,20 @@ export default function Plot3D(props: Plot3DProps) {
         .map((m) => ({ m, xz: mapToPlot(geom, m.lon as number, m.lat as number) }))
         .filter((p): p is { m: TwinMedia; xz: [number, number] } => !!p.xz),
     [media, geom],
+  )
+
+  // pengendali di koordinatnya bila ada dan bisa dipetakan; selain itu berjajar di sudut cuplikan
+  const kits = useMemo(
+    () =>
+      controllers.map((c, i) => ({
+        c,
+        xz: (c.lon !== null && c.lat !== null ? mapToPlot(geom, c.lon, c.lat) : null) ?? ([-HALF - 0.4 + i * 0.7, -HALF - 0.4] as [number, number]),
+      })),
+    [controllers, geom],
+  )
+  const sensorSpots = useMemo(
+    () => sensors.map((s) => ({ s, xz: mapToPlot(geom, s.lon, s.lat) })).filter((p): p is { s: SceneSensor; xz: [number, number] } => !!p.xz),
+    [sensors, geom],
   )
 
   return (
@@ -216,14 +220,15 @@ export default function Plot3D(props: Plot3DProps) {
           <Blades hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} />
           {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
 
-          <StationKit onHover={setHover} />
-          <Camera onHover={setHover} />
+          {kits.map(({ c, xz }) => (
+            <StationKit key={c.dev_id} controller={c} position={xz} onHover={setHover} />
+          ))}
 
-          {sensors.slice(0, 6).map((s, i) => (
+          {sensorSpots.map(({ s, xz }) => (
             <mesh
-              key={`${s.dev_id}-${s.ds_id}`}
-              position={[-HALF + 0.5 + i * 0.9, 0.12, HALF + 0.35]}
-              onPointerOver={() => setHover(`Sensor ${s.name}${s.value !== null ? `: ${s.value}` : ''}`)}
+              key={s.sens_id}
+              position={[xz[0], 0.12, xz[1]]}
+              onPointerOver={() => setHover(`Sensor ${s.name}${s.info ? ` — ${s.info}` : ''}`)}
               onPointerOut={() => setHover(null)}
             >
               <cylinderGeometry args={[0.07, 0.07, 0.24, 12]} />

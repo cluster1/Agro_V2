@@ -6,6 +6,9 @@ import { L, MAP_STYLES, KIND_LABEL, createMarkerIcon, glyphSvg } from '@/compone
 import {
   COORD_SOURCE_LABEL,
   N_STATUS,
+  isCamera,
+  paramLine,
+  parametersBySensor,
   PIN_COLOR,
   PIN_COLOR_ACTIVE,
   leafColor,
@@ -15,6 +18,7 @@ import {
   samplePoints,
   type NStatus,
   type ResolvedCoord,
+  type SensorParam,
   type SitePlant,
   type TwinMapData,
   type TwinMedia,
@@ -25,6 +29,8 @@ export type ColorMode = 'visual' | 'nitrogen'
 interface PlotMapProps {
   plants: SitePlant[]
   mapData: TwinMapData | undefined
+  /** parameter sensor, hanya sebagai keterangan di popup */
+  parameters: SensorParam[]
   selectedId: string
   mode: ColorMode
   /** warna fase tanaman terpilih pada tanggal slider */
@@ -57,7 +63,7 @@ const popup = (kind: 'site' | 'device' | 'sensor', name: string, coord: Resolved
  * Peta OpenStreetMap petak: poligon berwarna fase / status N, titik sampel BWD, foto bergeotag,
  * perangkat, sensor, dan site. Data tanpa koordinat dipasang di koordinat petak lalu site.
  */
-export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bwdMin, media, selectedMediaId, onSelectPlant, onSelectMedia }: PlotMapProps) {
+export function PlotMap({ plants, mapData, parameters, selectedId, mode, phaseColor, bwd, bwdMin, media, selectedMediaId, onSelectPlant, onSelectMedia }: PlotMapProps) {
   const box = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layers = useRef<Record<'plots' | 'samples' | 'photos' | 'devices' | 'sensors' | 'sites', L.LayerGroup> | null>(null)
@@ -105,17 +111,22 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
       const site = sitesById.get(d.site_id)
       return resolveCoord({ lat: d.lat, lon: d.lon }, [{ source: 'site', lat: site?.lat, lon: site?.lon }])
     }
+    // kamera disimpan bersama pengendalinya: tidak digambar sendiri, disebut di popup pengendali
+    const cameraNames = new Map<string, string[]>()
+    for (const s of mapData?.sensors ?? []) if (isCamera(s.type)) cameraNames.set(s.dev_id, [...(cameraNames.get(s.dev_id) ?? []), s.name ?? s.sens_id])
+    const bySens = parametersBySensor(parameters)
     const devices = (mapData?.devices ?? []).flatMap((d) => {
       const coord = deviceCoord(d)
-      return coord ? [{ d, coord }] : []
+      return coord ? [{ d, coord, cameras: cameraNames.get(d.dev_id) ?? [] }] : []
     })
     const deviceById = new Map((mapData?.devices ?? []).map((d) => [d.dev_id, d]))
     // sensor tanpa koordinat: titik perangkatnya, lalu site
     const sensors = (mapData?.sensors ?? []).flatMap((s) => {
+      if (isCamera(s.type)) return []
       const dev = deviceById.get(s.dev_id)
       const parent = dev ? deviceCoord(dev) : null
       const coord = resolveCoord({ lat: s.lat, lon: s.lon }, parent ? [{ source: parent.source === 'own' ? 'device' : 'site', lat: parent.lat, lon: parent.lon }] : [])
-      return coord ? [{ s, coord }] : []
+      return coord ? [{ s, coord, params: bySens.get(s.sens_id) ?? [] }] : []
     })
     const sites = (mapData?.sites ?? []).flatMap((s) => {
       const coord = resolveCoord({ lat: s.lat, lon: s.lon })
@@ -133,7 +144,7 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
       sites,
       samples: selRing ? samplePoints(selRing) : [],
     }
-  }, [plants, mapData, selectedId, mode, phaseColor, bwd, status, media, sitesById, plantCoord])
+  }, [plants, mapData, parameters, selectedId, mode, phaseColor, bwd, status, media, sitesById, plantCoord])
 
   const hasAnything = scene.hasPlots || scene.sites.length > 0
 
@@ -218,14 +229,14 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
         .addTo(g.photos)
     })
 
-    scene.devices.forEach(({ d, coord }) =>
+    scene.devices.forEach(({ d, coord, cameras }) =>
       L.marker([coord.lat, coord.lon], { icon: createMarkerIcon('device'), title: `Perangkat: ${d.name ?? d.dev_id}`, alt: `Perangkat: ${d.name ?? d.dev_id}`, keyboard: true })
-        .bindPopup(popup('device', d.name ?? d.dev_id, coord))
+        .bindPopup(popup('device', d.name ?? d.dev_id, coord, cameras.length ? `<p>Kamera: ${escapeHtml(cameras.join(', '))}</p>` : ''))
         .addTo(g.devices),
     )
-    scene.sensors.forEach(({ s, coord }) =>
+    scene.sensors.forEach(({ s, coord, params }) =>
       L.marker([coord.lat, coord.lon], { icon: createMarkerIcon('sensor'), title: `Sensor: ${s.name ?? s.sens_id}`, alt: `Sensor: ${s.name ?? s.sens_id}`, keyboard: true })
-        .bindPopup(popup('sensor', s.name ?? s.sens_id, coord, s.type ? `<p>${escapeHtml(s.type)}</p>` : ''))
+        .bindPopup(popup('sensor', s.name ?? s.sens_id, coord, [s.type ? `<p>${escapeHtml(s.type)}</p>` : '', ...params.map((p) => `<p class="muted">${escapeHtml(paramLine(p))}</p>`)].join('')))
         .addTo(g.sensors),
     )
     scene.sites.forEach(({ s, coord }) =>

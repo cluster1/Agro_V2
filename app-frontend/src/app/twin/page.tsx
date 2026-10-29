@@ -21,7 +21,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { canRunSimulation } from '@/lib/permissions'
 import { queryKeys } from '@/lib/query-keys'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, type PlantTwin, type SitePlant, type TwinMapData } from '@/lib/twin'
+import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, sensorScene, type PlantTwin, type SitePlant, type TwinMapData } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
@@ -122,6 +122,8 @@ export default function TwinPage() {
   const show3d = view === '3d' && gl === true
   const heightNow = twin && age !== null ? valueAtAge(twin, 'height', age) ?? 0 : 0
   const tillerNow = twin && age !== null ? valueAtAge(twin, 'tiller', age) ?? 1 : 1
+  const clusterId = twin ? sitePlants.data?.find((p) => p.plant_id === twin.plant.plant_id)?.cluster_id : undefined
+  const scene = useMemo(() => sensorScene(mapQuery.data, clusterId, twin?.sensors ?? []), [mapQuery.data, clusterId, twin])
   const markers = useMemo(() => (twin?.media ?? []).map((m) => (m.date ?? '').slice(0, 10)).filter(Boolean), [twin])
 
   const onSelectMedia = (id: string) => {
@@ -292,7 +294,8 @@ export default function TwinPage() {
                     geom={twin.plant.geom}
                     media={twin.media}
                     selectedMediaId={mediaId}
-                    sensors={twin.sensors}
+                    controllers={scene.controllers}
+                    sensors={scene.sensors}
                     onSelectMedia={onSelectMedia}
                     label={`Model 3D petak ${twin.plant.name ?? twin.plant.plant_id}, tinggi ${Math.round(heightNow)} sentimeter`}
                   />
@@ -300,6 +303,7 @@ export default function TwinPage() {
                   <PlotMap
                     plants={sitePlants.data ?? []}
                     mapData={mapQuery.data}
+                    parameters={twin.sensors}
                     selectedId={twin.plant.plant_id}
                     mode={mode}
                     phaseColor={phaseAtDay?.color ?? twin.now.phase?.color ?? null}

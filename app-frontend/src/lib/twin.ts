@@ -1,5 +1,7 @@
 /** Tipe dan fungsi murni untuk halaman Digital Twin (data dari GET /plants/:id/twin). */
 
+import { formatNumber } from '@/lib/format'
+
 export interface TwinPhase {
   phase_id: string
   name: string
@@ -108,9 +110,81 @@ export interface PlantTwin {
   } | null
   scenarios: { scenario: string; harvest_date: string | null; yield: number | null }[]
   recommendation: { sched_id: string; title: string; start: string | null; description: string | null; plan_value: string | null } | null
-  sensors: { ds_id: string; dev_id: string; name: string; kt_id: string | null; value: number | null; read_at: string | null; warn_min: number | null; warn_max: number | null }[]
+  sensors: { ds_id: string; dev_id: string; sens_id: string | null; name: string; kt_id: string | null; value: number | null; read_at: string | null; warn_min: number | null; warn_max: number | null }[]
   weather: { latest: WeatherDay | null; forecast: WeatherDay[] }
   media: TwinMedia[]
+}
+
+export type SensorParam = PlantTwin['sensors'][number]
+
+export const isCamera = (type: string | null | undefined): boolean => /camera|cctv/i.test(type ?? '')
+
+/** Parameter (tm_device_sensor) dikelompokkan per sensor (tm_sensor); hanya untuk keterangan, tidak diposisikan. */
+export function parametersBySensor(params: SensorParam[]): Map<string, SensorParam[]> {
+  const out = new Map<string, SensorParam[]>()
+  for (const p of params) if (p.sens_id) out.set(p.sens_id, [...(out.get(p.sens_id) ?? []), p])
+  return out
+}
+
+export const paramLine = (p: SensorParam): string => `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}`
+
+export interface SceneController {
+  dev_id: string
+  name: string
+  lat: number | null
+  lon: number | null
+  /** kamera disimpan bersama pengendali, digambar menyatu dengannya */
+  cameras: string[]
+}
+
+export interface SceneSensor {
+  sens_id: string
+  dev_id: string
+  name: string
+  type: string | null
+  lat: number
+  lon: number
+  /** nilai parameter sebagai keterangan */
+  info: string
+}
+
+/**
+ * Pengendali dan sensor milik cluster petak untuk model 3D. Sensor diposisikan dari koordinat tabel
+ * sensor (bila kosong, dari pengendalinya); kamera tidak digambar sendiri, tetapi ikut pengendali.
+ */
+export function sensorScene(map: TwinMapData | undefined, clusterId: string | null | undefined, params: SensorParam[]) {
+  const devices = (map?.devices ?? []).filter((d) => !!clusterId && d.cluster_id === clusterId)
+  const byDev = new Map(devices.map((d) => [d.dev_id, d]))
+  const sensors = (map?.sensors ?? []).filter((s) => byDev.has(s.dev_id))
+  const bySens = parametersBySensor(params)
+
+  const controllers: SceneController[] = devices.map((d) => ({
+    dev_id: d.dev_id,
+    name: d.name ?? d.dev_id,
+    lat: d.lat,
+    lon: d.lon,
+    cameras: sensors.filter((s) => s.dev_id === d.dev_id && isCamera(s.type)).map((s) => s.name ?? s.sens_id),
+  }))
+
+  const placed = sensors
+    .filter((s) => !isCamera(s.type))
+    .flatMap((s): SceneSensor[] => {
+      const dev = byDev.get(s.dev_id)
+      const coord = resolveCoord({ lat: s.lat, lon: s.lon }, [{ source: 'device', lat: dev?.lat, lon: dev?.lon }])
+      if (!coord) return []
+      return [
+        {
+          sens_id: s.sens_id,
+          dev_id: s.dev_id,
+          name: s.name ?? s.sens_id,
+          type: s.type,
+          lat: coord.lat,
+          lon: coord.lon,
+          info: (bySens.get(s.sens_id) ?? []).map(paramLine).join(', '),
+        },
+      ]
+    })
+  return { controllers, sensors: placed }
 }
 
 export interface WeatherDay {
