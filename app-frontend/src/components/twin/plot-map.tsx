@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { escapeHtml } from '@/lib/utils'
 import { L, MAP_STYLES, KIND_LABEL, createMarkerIcon, glyphSvg } from '@/components/maps/leaflet-setup'
 import {
   COORD_SOURCE_LABEL,
   N_STATUS,
+  PIN_COLOR,
+  PIN_COLOR_ACTIVE,
   leafColor,
   nStatus,
   polygonLatLngs,
@@ -42,7 +44,7 @@ const NO_PHASE = '#BDBDBD'
 const pinIcon = (active: boolean, estimated: boolean) =>
   L.divIcon({
     className: 'agro-marker agro-marker-photo',
-    html: `<svg width="26" height="34" viewBox="-13 -34 26 34" style="opacity:${estimated ? 0.65 : 1};filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))" aria-hidden="true"><path d="M0 0 C-11 -14 -11 -26 0 -26 C11 -26 11 -14 0 0Z" transform="translate(0 -2) scale(1.2)" fill="${active ? '#C62828' : '#1565C0'}" stroke="#fff" stroke-width="1.5"/><circle cy="-22" r="3.5" fill="#fff"/></svg>`,
+    html: `<svg width="26" height="34" viewBox="-13 -34 26 34" style="opacity:${estimated ? 0.65 : 1};filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))" aria-hidden="true"><path d="M0 0 C-11 -14 -11 -26 0 -26 C11 -26 11 -14 0 0Z" transform="translate(0 -2) scale(1.2)" fill="${active ? PIN_COLOR_ACTIVE : PIN_COLOR}" stroke="#fff" stroke-width="1.5"/><circle cy="-22" r="3.5" fill="#fff"/></svg>`,
     iconSize: [26, 34],
     iconAnchor: [13, 34],
     popupAnchor: [0, -30],
@@ -74,40 +76,66 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
   const sitesById = useMemo(() => new Map((mapData?.sites ?? []).map((s) => [s.site_id, s])), [mapData])
 
   /** koordinat petak: titik sendiri, lalu site */
-  const plantCoord = (p: SitePlant | undefined) => {
-    if (!p) return null
-    const site = sitesById.get(p.site_id)
-    return resolveCoord({ lat: p.lat, lon: p.lon }, [{ source: 'site', lat: site?.lat, lon: site?.lon }])
-  }
+  const plantCoord = useCallback(
+    (p: SitePlant | undefined) => {
+      if (!p) return null
+      const site = sitesById.get(p.site_id)
+      return resolveCoord({ lat: p.lat, lon: p.lon }, [{ source: 'site', lat: site?.lat, lon: site?.lon }])
+    },
+    [sitesById],
+  )
 
   // semua yang tergambar di peta, dihitung sekali per perubahan data
   const scene = useMemo(() => {
     const fill = (id: string, p: SitePlant): string => {
-      if (id === selectedId) return mode === 'nitrogen' ? N_STATUS[status].color : leafColor(bwd) === '#9CCC65' ? phaseColor ?? '#9CCC65' : leafColor(bwd)
-      return p.phase?.color ?? NO_PHASE
+      if (id !== selectedId) return p.phase?.color ?? NO_PHASE
+      if (mode === 'nitrogen') return N_STATUS[status].color
+      return bwd === null ? phaseColor ?? '#9CCC65' : leafColor(bwd)
     }
     const plots = plants.map((p) => ({ p, ring: polygonLatLngs(p.geom), coord: plantCoord(p), color: fill(p.plant_id, p), active: p.plant_id === selectedId }))
-    const sel = plantCoord(selected)
-    const photos = media.map((m) => ({ m, coord: resolveCoord({ lat: m.lat, lon: m.lon }, [{ source: 'plant', lat: sel?.lat, lon: sel?.lon }]) })).filter((x): x is { m: TwinMedia; coord: ResolvedCoord } => !!x.coord)
-    const siteOf = (id: string) => sitesById.get(id)
-    const devices = (mapData?.devices ?? [])
-      .map((d) => ({ d, coord: resolveCoord({ lat: d.lat, lon: d.lon }, [{ source: 'site', lat: siteOf(d.site_id)?.lat, lon: siteOf(d.site_id)?.lon }]) }))
-      .filter((x): x is { d: TwinMapData['devices'][number]; coord: ResolvedCoord } => !!x.coord)
-    const deviceById = new Map((mapData?.devices ?? []).map((d) => [d.dev_id, d]))
-    const sensors = (mapData?.sensors ?? [])
-      .map((s) => {
-        const dev = deviceById.get(s.dev_id)
-        const parent = dev ? resolveCoord({ lat: dev.lat, lon: dev.lon }, [{ source: 'site', lat: siteOf(dev.site_id)?.lat, lon: siteOf(dev.site_id)?.lon }]) : null
-        return { s, coord: resolveCoord({ lat: s.lat, lon: s.lon }, parent ? [{ source: 'site', lat: parent.lat, lon: parent.lon }] : []) }
-      })
-      .filter((x): x is { s: TwinMapData['sensors'][number]; coord: ResolvedCoord } => !!x.coord)
-    const sites = (mapData?.sites ?? []).map((s) => ({ s, coord: resolveCoord({ lat: s.lat, lon: s.lon }) })).filter((x): x is { s: TwinMapData['sites'][number]; coord: ResolvedCoord } => !!x.coord)
-    const selRing = polygonLatLngs(selected?.geom)
-    return { plots, photos, devices, sensors, sites, samples: selRing ? samplePoints(selRing) : [] }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plants, mapData, selectedId, mode, phaseColor, bwd, bwdMin, media, sitesById])
+    const selPlot = plots.find((x) => x.active)
+    const sel = selPlot?.coord
 
-  const hasAnything = scene.plots.some((x) => x.ring || x.coord) || scene.sites.length > 0
+    const photos = media.flatMap((m) => {
+      const coord = resolveCoord({ lat: m.lat, lon: m.lon }, [{ source: 'plant', lat: sel?.lat, lon: sel?.lon }])
+      return coord ? [{ m, coord }] : []
+    })
+
+    const deviceCoord = (d: TwinMapData['devices'][number]) => {
+      const site = sitesById.get(d.site_id)
+      return resolveCoord({ lat: d.lat, lon: d.lon }, [{ source: 'site', lat: site?.lat, lon: site?.lon }])
+    }
+    const devices = (mapData?.devices ?? []).flatMap((d) => {
+      const coord = deviceCoord(d)
+      return coord ? [{ d, coord }] : []
+    })
+    const deviceById = new Map((mapData?.devices ?? []).map((d) => [d.dev_id, d]))
+    // sensor tanpa koordinat: titik perangkatnya, lalu site
+    const sensors = (mapData?.sensors ?? []).flatMap((s) => {
+      const dev = deviceById.get(s.dev_id)
+      const parent = dev ? deviceCoord(dev) : null
+      const coord = resolveCoord({ lat: s.lat, lon: s.lon }, parent ? [{ source: parent.source === 'own' ? 'device' : 'site', lat: parent.lat, lon: parent.lon }] : [])
+      return coord ? [{ s, coord }] : []
+    })
+    const sites = (mapData?.sites ?? []).flatMap((s) => {
+      const coord = resolveCoord({ lat: s.lat, lon: s.lon })
+      return coord ? [{ s, coord }] : []
+    })
+
+    const selRing = selPlot?.ring ?? null
+    return {
+      plots,
+      selPlot,
+      hasPlots: plots.some((x) => x.ring || x.coord),
+      photos,
+      devices,
+      sensors,
+      sites,
+      samples: selRing ? samplePoints(selRing) : [],
+    }
+  }, [plants, mapData, selectedId, mode, phaseColor, bwd, status, media, sitesById, plantCoord])
+
+  const hasAnything = scene.hasPlots || scene.sites.length > 0
 
   // peta dibuat sekali
   useEffect(() => {
@@ -211,9 +239,9 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    const key = `${selectedId}|${scene.plots.some((x) => x.ring || x.coord) ? 1 : 0}`
+    const key = `${selectedId}|${scene.hasPlots ? 1 : 0}`
     if (fittedFor.current === key) return
-    const sel = scene.plots.find((x) => x.active)
+    const sel = scene.selPlot
     if (sel?.ring) map.fitBounds(L.latLngBounds(sel.ring), { padding: [40, 40], maxZoom: 18 })
     else if (sel?.coord) map.setView([sel.coord.lat, sel.coord.lon], 16)
     else if (scene.sites.length) map.fitBounds(L.latLngBounds(scene.sites.map((x) => [x.coord.lat, x.coord.lon] as [number, number])), { padding: [40, 40], maxZoom: 15 })
@@ -231,8 +259,8 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
     )
   }
 
-  const selCoord = plantCoord(selected)
-  const approx = selected && !polygonLatLngs(selected.geom)
+  const selCoord = scene.selPlot?.coord
+  const approx = scene.selPlot && !scene.selPlot.ring
 
   return (
     <figure className="agro-map space-y-3">
@@ -269,7 +297,7 @@ export function PlotMap({ plants, mapData, selectedId, mode, phaseColor, bwd, bw
           Titik sampel BWD
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: '#1565C0' }} aria-hidden="true" />
+          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: PIN_COLOR }} aria-hidden="true" />
           Foto
         </span>
         <span>Foto, perangkat, dan sensor tanpa koordinat dipasang di titik petak atau site.</span>

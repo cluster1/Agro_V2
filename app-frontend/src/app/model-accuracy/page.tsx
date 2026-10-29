@@ -27,7 +27,9 @@ import { signed, type AccuracyRow, type AccuracySummary } from '@/lib/calibratio
 function ErrorBadge({ value }: { value: number | null }) {
   if (value === null) return <span className="text-muted-foreground">-</span>
   const abs = Math.abs(value)
-  const meta = abs <= 10 ? { variant: 'success' as const, label: 'baik' } : abs <= 20 ? { variant: 'warning' as const, label: 'cukup' } : { variant: 'destructive' as const, label: 'jauh' }
+  let meta: { variant: 'success' | 'warning' | 'destructive'; label: string } = { variant: 'destructive', label: 'jauh' }
+  if (abs <= 10) meta = { variant: 'success', label: 'baik' }
+  else if (abs <= 20) meta = { variant: 'warning', label: 'cukup' }
   return (
     <span className="inline-flex items-center gap-2 tabular-nums">
       {signed(value)}%
@@ -230,12 +232,12 @@ export default function ModelAccuracyPage() {
                             </details>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{r.pred_yield === null ? '-' : formatNumber(r.pred_yield)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.actual_yield === null ? '-' : formatNumber(r.actual_yield)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNumber(r.pred_yield)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNumber(r.actual_yield)}</TableCell>
                         <TableCell>
                           <ErrorBadge value={r.yield_error_pct} />
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{r.ubinan_yield === null ? '-' : formatNumber(r.ubinan_yield)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatNumber(r.ubinan_yield)}</TableCell>
                         <TableCell>
                           <ErrorBadge value={r.ubinan_error_pct} />
                         </TableCell>

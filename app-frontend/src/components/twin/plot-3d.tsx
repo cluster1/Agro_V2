@@ -6,7 +6,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { N_STATUS, grainColor, hasWater, leafColor, nStatus, ringOf, type GeoJsonPolygon, type TwinMedia } from '@/lib/twin'
+import { N_STATUS, PIN_COLOR, PIN_COLOR_ACTIVE, grainColor, hasWater, leafColor, nStatus, ringOf, type GeoJsonPolygon, type TwinMedia } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 
 export interface Plot3DProps {
@@ -101,7 +101,6 @@ function Panicles({ hills, heightCm, color }: { hills: [number, number][]; heigh
     hills.forEach(([x, z], i) => {
       dummy.position.set(x + (rand() - 0.5) * 0.06, height * 0.95, z + (rand() - 0.5) * 0.06)
       dummy.rotation.set((rand() - 0.5) * 0.8, 0, (rand() - 0.5) * 0.8)
-      dummy.scale.set(1, 1, 1)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
     })
@@ -163,21 +162,23 @@ function mapToPlot(geom: GeoJsonPolygon | null, lon: number, lat: number): [numb
   return [-HALF + tx * HALF * 2, HALF - ty * HALF * 2]
 }
 
+const HILLS = hillPositions()
+/** Titik sampel BWD: diagonal cuplikan, 30 cm dari tepi. */
+const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
+  const v = -HALF + 0.3 + ((HALF * 2 - 0.6) * (i + 0.5)) / 20
+  return [v, v]
+})
+
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, Station Kit, kamera, sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
   const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, sensors, onSelectMedia, label } = props
   const [hover, setHover] = useState<string | null>(null)
-  const controls = useRef<any>(null)
+  const controls = useRef<React.ElementRef<typeof OrbitControls>>(null)
 
-  const hills = useMemo(() => hillPositions(), [])
   const status = nStatus(bwd, bwdMin)
   const leaf = mode === 'nitrogen' ? N_STATUS[status].color : leafColor(bwd)
   const flowering = (phaseSeq ?? 0) >= 7
 
-  const samples = useMemo(
-    () => Array.from({ length: 20 }, (_, i) => [-HALF + 0.3 + ((HALF * 2 - 0.6) * (i + 0.5)) / 20, -HALF + 0.3 + ((HALF * 2 - 0.6) * (i + 0.5)) / 20] as [number, number]),
-    [],
-  )
   const pins = useMemo(
     () =>
       media
@@ -212,8 +213,8 @@ export default function Plot3D(props: Plot3DProps) {
             </mesh>
           )}
 
-          <Blades hills={hills} heightCm={heightCm} tillers={tillers} color={leaf} />
-          {flowering && <Panicles hills={hills} heightCm={heightCm} color={grainColor(phaseSeq)} />}
+          <Blades hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} />
+          {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
 
           <StationKit onHover={setHover} />
           <Camera onHover={setHover} />
@@ -230,7 +231,7 @@ export default function Plot3D(props: Plot3DProps) {
             </mesh>
           ))}
 
-          {samples.map(([x, z], i) => (
+          {SAMPLES.map(([x, z], i) => (
             <mesh key={i} position={[x, 0.06, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
               <sphereGeometry args={[0.06, 10, 10]} />
               <meshStandardMaterial color="#FFFFFF" />
@@ -252,11 +253,11 @@ export default function Plot3D(props: Plot3DProps) {
               >
                 <mesh position={[0, 0.35, 0]} rotation={[Math.PI, 0, 0]}>
                   <coneGeometry args={[0.09, 0.3, 12]} />
-                  <meshStandardMaterial color={active ? '#C62828' : '#1565C0'} />
+                  <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
                 </mesh>
                 <mesh position={[0, 0.55, 0]}>
                   <sphereGeometry args={[0.1, 12, 12]} />
-                  <meshStandardMaterial color={active ? '#C62828' : '#1565C0'} />
+                  <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
                 </mesh>
               </group>
             )

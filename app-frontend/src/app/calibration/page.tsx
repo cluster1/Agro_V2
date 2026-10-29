@@ -31,8 +31,6 @@ import { queryKeys } from '@/lib/query-keys'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { SOURCE_LABEL, signed, type ApplyResult, type CalibrationReport } from '@/lib/calibration'
 
-const num = (v: number | null | undefined) => (v === null || v === undefined ? '-' : formatNumber(v))
-
 export default function CalibrationPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -200,11 +198,11 @@ export default function CalibrationPage() {
                             <TableCell>
                               <Badge variant={p.source === 'KALIBRASI' ? 'success' : 'outline'}>{SOURCE_LABEL[p.source ?? ''] ?? p.source ?? '-'}</Badge>
                             </TableCell>
-                            <TableCell className="text-right tabular-nums">{num(p.estimate.start_age)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{num(p.estimate.gdd_start)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatNumber(p.estimate.start_age)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatNumber(p.estimate.gdd_start)}</TableCell>
                             <TableCell className="text-right tabular-nums">{p.n_plots}</TableCell>
-                            <TableCell className="text-right tabular-nums">{num(p.mean_age)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{num(p.mean_gdd)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatNumber(p.mean_age)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatNumber(p.mean_gdd)}</TableCell>
                             <TableCell className="text-right tabular-nums">{signed(p.diff_gdd, 0)}</TableCell>
                             <TableCell>
                               {p.proposal ? (

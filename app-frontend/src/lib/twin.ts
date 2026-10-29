@@ -225,7 +225,7 @@ export function bwdAt(observations: TwinObservation[], day: string): number | nu
   return past.length ? (past[past.length - 1].bwd as number) : null
 }
 
-export type CoordSource = 'own' | 'plant' | 'site'
+export type CoordSource = 'own' | 'plant' | 'device' | 'site'
 
 export interface ResolvedCoord {
   lat: number
@@ -255,9 +255,14 @@ export function resolveCoord(
   return null
 }
 
+/** Warna pin foto di peta dan model 3D. */
+export const PIN_COLOR = '#1565C0'
+export const PIN_COLOR_ACTIVE = '#C62828'
+
 export const COORD_SOURCE_LABEL: Record<CoordSource, string> = {
   own: 'koordinat sendiri',
   plant: 'koordinat petak (perkiraan)',
+  device: 'koordinat perangkat (perkiraan)',
   site: 'koordinat site (perkiraan)',
 }
 
@@ -270,7 +275,7 @@ export function polygonLatLngs(geom: GeoJsonPolygon | null | undefined): [number
 }
 
 /** Ray casting; titik dan cincin dalam sistem koordinat yang sama. */
-export function pointInRing(point: [number, number], ring: [number, number][]): boolean {
+function pointInRing(point: [number, number], ring: [number, number][]): boolean {
   let hit = false
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i]

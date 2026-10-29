@@ -1,3 +1,5 @@
+import { formatNumber } from '@/lib/format'
+
 export interface PhaseObservation {
   plant_id: string
   plant_name: string | null
@@ -69,4 +71,4 @@ export const SOURCE_LABEL: Record<string, string> = {
 
 /** Selisih bertanda: tampil dengan + untuk positif; kosong bila tidak ada. */
 export const signed = (v: number | null | undefined, digits = 1): string =>
-  v === null || v === undefined ? '-' : `${v > 0 ? '+' : ''}${v.toLocaleString('id-ID', { maximumFractionDigits: digits })}`
+  v === null || v === undefined ? '-' : `${v > 0 ? '+' : ''}${formatNumber(v, { maximumFractionDigits: digits })}`
