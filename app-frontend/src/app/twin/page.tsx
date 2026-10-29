@@ -26,12 +26,7 @@ import type { ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
-
-// three.js is heavy and needs the browser: load it only when the 3D view is shown
-const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
-  ssr: false,
-  loading: () => <div className="aspect-[4/3] w-full rounded-lg bg-muted motion-safe:animate-pulse" role="status" aria-label="Memuat model 3D" />,
-})
+import { TwinStage } from '@/components/twin/twin-stage'
 
 // Leaflet needs the browser (window): never render it on the server
 const PlotMap = dynamic(() => import('@/components/twin/plot-map').then((m) => m.PlotMap), {
@@ -263,24 +258,20 @@ export default function TwinPage() {
                 </div>
 
                 {show3d ? (
-                  <Plot3D
-                    heightCm={heightNow}
-                    tillers={tillerNow}
+                  <TwinStage
+                    twin={twin}
+                    shownDay={shownDay}
+                    age={age}
+                    phaseAtDay={phaseAtDay}
                     bwd={bwd}
-                    bwdMin={twin.reference.bwd_min}
+                    heightNow={heightNow}
+                    tillerNow={tillerNow}
                     mode={mode}
-                    phaseSeq={phaseAtDay ? phaseAtDay.seq : twin.now.phase?.seq ?? null}
-                    geom={twin.plant.geom}
-                    media={twin.media}
-                    selectedMediaId={mediaId}
-                    controllers={scene.controllers}
-                    sensors={scene.sensors}
-                    parameters={twin.sensors}
-                    nutrients={twin.nutrients}
-                    selected={picked}
-                    onSelectDevice={setPicked}
+                    scene={scene}
+                    mediaId={mediaId}
+                    picked={picked}
+                    onPick={setPicked}
                     onSelectMedia={onSelectMedia}
-                    label={`Model 3D petak ${twin.plant.name ?? twin.plant.plant_id}, tinggi ${Math.round(heightNow)} sentimeter`}
                   />
                 ) : (
                   <PlotMap

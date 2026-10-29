@@ -1,19 +1,14 @@
 'use client'
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Cpu, Radio, RotateCcw, Tag } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { formatDateTime, formatNumber } from '@/lib/format'
+import { AlertTriangle } from 'lucide-react'
+import { formatNumber } from '@/lib/format'
 import {
   N_STATUS,
-  deviceSummaries,
   paramState,
-  type DeviceSummary,
-  type PlantTwin,
-  type SensorParam,
   PIN_COLOR,
   PIN_COLOR_ACTIVE,
   grainColor,
@@ -29,6 +24,15 @@ import {
 } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 
+/** Perintah kamera untuk toolbar di luar kanvas (diisi Plot3D lewat prop `api`). */
+export interface Plot3DApi {
+  zoomIn: () => void
+  zoomOut: () => void
+  /** 1 atau -1: putar seperempat putaran mendatar */
+  rotate: (dir: 1 | -1) => void
+  reset: () => void
+}
+
 export interface Plot3DProps {
   /** tinggi rata-rata (cm) dan anakan per rumpun pada tanggal slider */
   heightCm: number
@@ -43,11 +47,11 @@ export interface Plot3DProps {
   /** pengendali (kamera menyatu dengannya) dan sensor, diposisikan dari koordinat tabel sensor */
   controllers: SceneController[]
   sensors: SceneSensor[]
-  /** parameter sensor petak (nilai, batas, waktu baca), untuk panel Perangkat & sensor */
-  parameters: SensorParam[]
-  /** defisit hara dari model (kg/ha), untuk panel status hara di atas model */
-  nutrients: PlantTwin['nutrients']
-  /** pengendali atau sensor yang diklik; disorot dan infonya ditampilkan di luar kanvas */
+  /** tampilkan label data melayang di atas sensor */
+  showLabels: boolean
+  /** diisi dengan perintah kamera; ref dipakai karena next/dynamic tidak meneruskan `ref` */
+  api: React.MutableRefObject<Plot3DApi | null>
+  /** pengendali atau sensor yang diklik; disorot di model */
   selected: SceneSelection | null
   onSelectDevice: (selection: SceneSelection | null) => void
   onSelectMedia: (id: string) => void
@@ -234,195 +238,6 @@ function SensorLabel({ sensor, active, onSelect }: { sensor: SceneSensor; active
   )
 }
 
-/** Panel status hara di atas model: status N (BWD pada tanggal slider) dan defisit N, P₂O₅, K₂O dari model. */
-function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof N_STATUS; bwd: number | null; bwdMin: number | null; nutrients: PlantTwin['nutrients'] }) {
-  const [open, setOpen] = useState(true)
-  const meta = N_STATUS[status]
-  const rows = [
-    { label: 'N', value: nutrients.n_def, unit: 'kg N/ha' },
-    { label: 'P₂O₅', value: nutrients.p2o5_def, unit: 'kg/ha' },
-    { label: 'K₂O', value: nutrients.k2o_def, unit: 'kg/ha' },
-  ]
-  return (
-    <div className="rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls="twin-hud-nutrient"
-        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 font-medium"
-      >
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 shrink-0 rounded-full border" style={{ backgroundColor: meta.color }} aria-hidden="true" />
-          Status hara · N {meta.label}
-        </span>
-        {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
-      </button>
-      {open && (
-        <div id="twin-hud-nutrient" className="space-y-1.5 border-t px-3 py-2">
-          <p className="tabular-nums text-muted-foreground">
-            BWD {bwd !== null ? String(bwd).replace('.', ',') : '-'}
-            {bwdMin !== null ? ` · batas fase ${bwdMin}` : ' · fase tanpa batas BWD'}
-          </p>
-          <ul aria-label="Defisit hara dari model" className="space-y-0.5">
-            {rows.map((r) => (
-              <li key={r.label} className="flex items-center justify-between gap-3">
-                <span className="font-medium">{r.label}</span>
-                {r.value === null ? (
-                  <span className="text-muted-foreground">belum dihitung</span>
-                ) : r.value > 0 ? (
-                  <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-destructive">
-                    <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                    kurang {formatNumber(r.value)} {r.unit}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 font-semibold text-success">
-                    <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                    cukup
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ParamRow({ p }: { p: SensorParam }) {
-  const st = paramState(p)
-  const bad = st === 'low' || st === 'high'
-  const title = `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}${p.read_at ? ` · dibaca ${formatDateTime(p.read_at)}` : ''}`
-  return (
-    <li className="flex items-center justify-between gap-2" title={title}>
-      <span className="truncate text-muted-foreground">{p.name}</span>
-      <span className={`inline-flex shrink-0 items-center gap-1 font-medium tabular-nums ${bad ? 'text-destructive' : ''}`}>
-        {bad && <AlertTriangle className="h-3 w-3" aria-hidden="true" />}
-        {p.value === null ? '-' : formatNumber(p.value)}
-        {bad && <span className="sr-only">{st === 'low' ? 'di bawah batas peringatan' : 'di atas batas peringatan'}</span>}
-      </span>
-    </li>
-  )
-}
-
-/** Kotak HUD terpisah: judul yang dapat diklik untuk menyorot objek di 3D, dan tombol lipat sendiri. */
-function HudBox({
-  id,
-  icon,
-  title,
-  meta,
-  selected,
-  onSelect,
-  children,
-}: {
-  id: string
-  icon: React.ReactNode
-  title: string
-  meta?: string
-  selected?: boolean
-  onSelect?: () => void
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(true)
-  const head = (
-    <>
-      {icon}
-      <span className="truncate font-medium">{title}</span>
-      {meta && <span className="shrink-0 text-muted-foreground">· {meta}</span>}
-    </>
-  )
-  return (
-    <section aria-label={title} className={`shrink-0 rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm ${selected ? 'border-2 border-amber-500' : ''}`}>
-      <div className="flex items-stretch">
-        {onSelect ? (
-          <button type="button" onClick={onSelect} aria-pressed={selected} className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5 text-left">
-            {head}
-          </button>
-        ) : (
-          <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5">{head}</div>
-        )}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls={id}
-          aria-label={`${open ? 'Lipat' : 'Buka'} ${title}`}
-          className="flex min-h-11 w-11 shrink-0 items-center justify-center"
-        >
-          {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
-        </button>
-      </div>
-      {open && (
-        <div id={id} className="space-y-1 border-t px-3 py-2">
-          {children}
-        </div>
-      )}
-    </section>
-  )
-}
-
-/** Kotak HUD per perangkat dan per sensor di atas model, juga untuk yang belum punya koordinat. */
-function DeviceHud({ devices, selected, onSelect }: { devices: DeviceSummary[]; selected: SceneSelection | null; onSelect: (s: SceneSelection) => void }) {
-  const isSel = (kind: SceneSelection['kind'], id: string) => selected?.kind === kind && selected.id === id
-  if (devices.length === 0) {
-    return (
-      <HudBox id="twin-hud-empty" icon={<Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />} title="Perangkat & sensor">
-        <p className="text-muted-foreground">Belum ada perangkat di cluster petak ini.</p>
-      </HudBox>
-    )
-  }
-  return (
-    <>
-      {devices.map(({ controller: c, sensors, loose }) => (
-        <div key={c.dev_id} className="contents">
-          <HudBox
-            id={`twin-hud-dev-${c.dev_id}`}
-            icon={<Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
-            title={c.name}
-            meta={c.status === 1 ? 'Aktif' : c.status === null ? undefined : 'Nonaktif'}
-            selected={isSel('controller', c.dev_id)}
-            onSelect={() => onSelect({ kind: 'controller', id: c.dev_id })}
-          >
-            <p className="text-muted-foreground">{sensors.length} sensor terhubung</p>
-            {c.cameras.length > 0 && <p className="text-muted-foreground">Kamera: {c.cameras.join(', ')}</p>}
-          </HudBox>
-          {sensors.map((s) => (
-            <HudBox
-              key={s.sens_id}
-              id={`twin-hud-sens-${s.sens_id}`}
-              icon={<Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
-              title={s.name}
-              meta={s.type ?? undefined}
-              selected={isSel('sensor', s.sens_id)}
-              onSelect={() => onSelect({ kind: 'sensor', id: s.sens_id })}
-            >
-              {s.params.length === 0 ? (
-                <p className="text-muted-foreground">belum ada parameter terhubung</p>
-              ) : (
-                <ul className="space-y-0.5" aria-label={`Parameter ${s.name}`}>
-                  {s.params.map((p) => (
-                    <ParamRow key={p.ds_id} p={p} />
-                  ))}
-                </ul>
-              )}
-            </HudBox>
-          ))}
-          {loose.length > 0 && (
-            <HudBox id={`twin-hud-loose-${c.dev_id}`} icon={<Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />} title={`Parameter lain · ${c.name}`}>
-              <ul className="space-y-0.5" aria-label={`Parameter lain ${c.name}`}>
-                {loose.map((p) => (
-                  <ParamRow key={p.ds_id} p={p} />
-                ))}
-              </ul>
-            </HudBox>
-          )}
-        </div>
-      ))}
-    </>
-  )
-}
-
 /** Peta lon/lat ke koordinat cuplikan [-HALF, HALF] berdasarkan kotak batas polygon petak. */
 function mapToPlot(geom: GeoJsonPolygon | null, lon: number, lat: number): [number, number] | null {
   const ring = ringOf(geom)
@@ -443,15 +258,81 @@ const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
   return [v, v]
 })
 
+/** Sudut kamera isometrik: sekitar 54,7 derajat dari garis tegak, terkunci agar geser hanya memutar mendatar. */
+const ISO_POLAR = Math.acos(1 / Math.sqrt(3))
+const ZOOM_STEP = 1.25
+const ROTATE_MS = 250
+const UP = new THREE.Vector3(0, 1, 0)
+
+type Controls = React.ElementRef<typeof OrbitControls>
+
+/** Zoom awal mengikuti ukuran kanvas supaya cuplikan 6 x 6 m dan tiangnya selalu muat; batas zoom 0,6x sampai 3x. */
+function CameraRig({ controls }: { controls: React.RefObject<Controls> }) {
+  const { size, camera } = useThree()
+  useLayoutEffect(() => {
+    const cam = camera as THREE.OrthographicCamera
+    const base = Math.max(12, Math.min(size.width, size.height) / 11)
+    cam.zoom = base
+    cam.updateProjectionMatrix()
+    const c = controls.current
+    if (c) {
+      c.minZoom = base * 0.6
+      c.maxZoom = base * 3
+      c.saveState()
+      c.update()
+    }
+  }, [size.width, size.height, camera, controls])
+  return null
+}
+
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, parameters, nutrients, selected, onSelectDevice, onSelectMedia, label } = props
-  const [showLabels, setShowLabels] = useState(true)
-  const devices = useMemo(() => deviceSummaries(controllers, parameters), [controllers, parameters])
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, showLabels, api, selected, onSelectDevice, onSelectMedia, label } = props
   const [hoverState, setHoverState] = useState<{ label: string; clickable: boolean } | null>(null)
   const hover = hoverState?.label ?? null
   const setHover = (label: string | null, clickable = false) => setHoverState(label ? { label, clickable } : null)
-  const controls = useRef<React.ElementRef<typeof OrbitControls>>(null)
+  const controls = useRef<Controls>(null)
+
+  // perintah kamera untuk toolbar di luar kanvas
+  useEffect(() => {
+    const zoomBy = (factor: number) => {
+      const c = controls.current
+      if (!c) return
+      const cam = c.object as THREE.OrthographicCamera
+      cam.zoom = Math.min(c.maxZoom, Math.max(c.minZoom, cam.zoom * factor))
+      cam.updateProjectionMatrix()
+      c.update()
+    }
+    const rotateBy = (angle: number) => {
+      const c = controls.current
+      if (!c) return
+      const step = (delta: number) => {
+        const offset = c.object.position.clone().sub(c.target).applyAxisAngle(UP, delta)
+        c.object.position.copy(c.target).add(offset)
+        c.update()
+      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return step(angle)
+      const start = performance.now()
+      let done = 0
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / ROTATE_MS)
+        const delta = angle * (1 - Math.pow(1 - t, 3)) - done
+        done += delta
+        step(delta)
+        if (t < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }
+    api.current = {
+      zoomIn: () => zoomBy(ZOOM_STEP),
+      zoomOut: () => zoomBy(1 / ZOOM_STEP),
+      rotate: (dir) => rotateBy((dir * Math.PI) / 2),
+      reset: () => controls.current?.reset(),
+    }
+    return () => {
+      api.current = null
+    }
+  }, [api])
 
   const status = nStatus(bwd, bwdMin)
   const leaf = mode === 'nitrogen' ? N_STATUS[status].color : leafColor(bwd)
@@ -481,154 +362,123 @@ export default function Plot3D(props: Plot3DProps) {
   )
 
   return (
-    <figure className="space-y-2">
-      <div
-        className={`relative aspect-[4/3] w-full overflow-hidden rounded-lg border bg-gradient-to-b from-sky-100 to-sky-50 dark:from-slate-800 dark:to-slate-900 ${hoverState?.clickable ? 'cursor-pointer' : ''}`}
+    <div
+      className={`relative h-full w-full overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 dark:from-slate-800 dark:to-slate-900 ${hoverState?.clickable ? 'cursor-pointer' : ''}`}
+    >
+      <Canvas
+        orthographic
+        onPointerMissed={() => onSelectDevice(null)}
+        dpr={[1, 2]}
+        camera={{ position: [8, 8, 8], zoom: 40, near: -100, far: 200 }}
+        role="img"
+        aria-label={label}
+        gl={{ antialias: true, powerPreference: 'default' }}
       >
-        <Canvas
-          onPointerMissed={() => onSelectDevice(null)}
-          dpr={[1, 2]}
-          camera={{ position: [5.5, 4.2, 6.5], fov: 45, near: 0.1, far: 80 }}
-          role="img"
-          aria-label={label}
-          gl={{ antialias: true, powerPreference: 'default' }}
-        >
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[6, 9, 4]} intensity={1.1} />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[6, 9, 4]} intensity={1.1} />
 
-          {/* tanah dan air sawah */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        {/* tanah dan air sawah */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[HALF * 2 + 1.6, HALF * 2 + 1.6]} />
+          <meshStandardMaterial color="#6D4C41" roughness={1} />
+        </mesh>
+        {hasWater(phaseSeq) && (
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
             <planeGeometry args={[HALF * 2 + 1.6, HALF * 2 + 1.6]} />
-            <meshStandardMaterial color="#6D4C41" roughness={1} />
+            <meshStandardMaterial color="#4FC3F7" transparent opacity={0.45} roughness={0.2} metalness={0.1} depthWrite={false} />
           </mesh>
-          {hasWater(phaseSeq) && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-              <planeGeometry args={[HALF * 2 + 1.6, HALF * 2 + 1.6]} />
-              <meshStandardMaterial color="#4FC3F7" transparent opacity={0.45} roughness={0.2} metalness={0.1} depthWrite={false} />
-            </mesh>
-          )}
-
-          <Blades hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} />
-          {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
-
-          {kits.map(({ c, xz }) => (
-            <StationKit
-              key={c.dev_id}
-              controller={c}
-              position={xz}
-              selected={selected?.kind === 'controller' && selected.id === c.dev_id}
-              onHover={setHover}
-              onSelect={() => onSelectDevice({ kind: 'controller', id: c.dev_id })}
-            />
-          ))}
-
-          {sensorSpots.map(({ s, xz }) => {
-            const active = selected?.kind === 'sensor' && selected.id === s.sens_id
-            return (
-              <group
-                key={s.sens_id}
-                position={[xz[0], 0, xz[1]]}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelectDevice({ kind: 'sensor', id: s.sens_id })
-                }}
-                onPointerOver={(e) => {
-                  e.stopPropagation()
-                  setHover(`Sensor ${s.name}${s.info ? ` — ${s.info}` : ''} (klik untuk info)`, true)
-                }}
-                onPointerOut={() => setHover(null)}
-              >
-                <mesh position={[0, 0.12, 0]}>
-                  <cylinderGeometry args={[0.07, 0.07, 0.24, 12]} />
-                  <meshStandardMaterial color="#8E24AA" emissive={active ? HIGHLIGHT : '#000000'} emissiveIntensity={active ? 0.7 : 0} />
-                </mesh>
-                {/* area klik lebih besar dari silinder kecil */}
-                <mesh position={[0, 0.15, 0]} visible={false}>
-                  <sphereGeometry args={[0.25, 8, 8]} />
-                </mesh>
-                {active && (
-                  <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <ringGeometry args={[0.14, 0.2, 24]} />
-                    <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
-                  </mesh>
-                )}
-                {showLabels && <SensorLabel sensor={s} active={active} onSelect={() => onSelectDevice({ kind: 'sensor', id: s.sens_id })} />}
-              </group>
-            )
-          })}
-
-          {SAMPLES.map(([x, z], i) => (
-            <mesh key={i} position={[x, 0.06, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
-              <sphereGeometry args={[0.06, 10, 10]} />
-              <meshStandardMaterial color="#FFFFFF" />
-            </mesh>
-          ))}
-
-          {pins.map(({ m, xz }) => {
-            const active = m.media_id === selectedMediaId
-            return (
-              <group
-                key={m.media_id}
-                position={[xz[0], 0, xz[1]]}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSelectMedia(m.media_id)
-                }}
-                onPointerOver={() => setHover(`Foto ${m.date ? m.date.slice(0, 10) : ''}${m.description ? `: ${m.description}` : ''}`)}
-                onPointerOut={() => setHover(null)}
-              >
-                <mesh position={[0, 0.35, 0]} rotation={[Math.PI, 0, 0]}>
-                  <coneGeometry args={[0.09, 0.3, 12]} />
-                  <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
-                </mesh>
-                <mesh position={[0, 0.55, 0]}>
-                  <sphereGeometry args={[0.1, 12, 12]} />
-                  <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
-                </mesh>
-              </group>
-            )
-          })}
-
-          <OrbitControls ref={controls} makeDefault enablePan={false} minDistance={3} maxDistance={16} maxPolarAngle={Math.PI / 2.05} target={[0, 0.4, 0]} />
-        </Canvas>
-
-        {hover && (
-          <div className="pointer-events-none absolute left-3 top-3 rounded bg-background/90 px-2 py-1 text-xs shadow" role="status">
-            {hover}
-          </div>
         )}
-        <div className="absolute bottom-3 left-3 z-20 flex max-h-[calc(100%-4.5rem)] max-w-[min(18rem,calc(100%-9rem))] flex-col gap-2 overflow-y-auto">
-          <DeviceHud devices={devices} selected={selected} onSelect={onSelectDevice} />
-          <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={nutrients} />
+
+        <Blades hills={HILLS} heightCm={heightCm} tillers={tillers} color={leaf} />
+        {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
+
+        {kits.map(({ c, xz }) => (
+          <StationKit
+            key={c.dev_id}
+            controller={c}
+            position={xz}
+            selected={selected?.kind === 'controller' && selected.id === c.dev_id}
+            onHover={setHover}
+            onSelect={() => onSelectDevice({ kind: 'controller', id: c.dev_id })}
+          />
+        ))}
+
+        {sensorSpots.map(({ s, xz }) => {
+          const active = selected?.kind === 'sensor' && selected.id === s.sens_id
+          return (
+            <group
+              key={s.sens_id}
+              position={[xz[0], 0, xz[1]]}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectDevice({ kind: 'sensor', id: s.sens_id })
+              }}
+              onPointerOver={(e) => {
+                e.stopPropagation()
+                setHover(`Sensor ${s.name}${s.info ? ` — ${s.info}` : ''} (klik untuk menyorot)`, true)
+              }}
+              onPointerOut={() => setHover(null)}
+            >
+              <mesh position={[0, 0.12, 0]}>
+                <cylinderGeometry args={[0.07, 0.07, 0.24, 12]} />
+                <meshStandardMaterial color="#8E24AA" emissive={active ? HIGHLIGHT : '#000000'} emissiveIntensity={active ? 0.7 : 0} />
+              </mesh>
+              {/* area klik lebih besar dari silinder kecil */}
+              <mesh position={[0, 0.15, 0]} visible={false}>
+                <sphereGeometry args={[0.25, 8, 8]} />
+              </mesh>
+              {active && (
+                <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <ringGeometry args={[0.14, 0.2, 24]} />
+                  <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
+                </mesh>
+              )}
+              {showLabels && <SensorLabel sensor={s} active={active} onSelect={() => onSelectDevice({ kind: 'sensor', id: s.sens_id })} />}
+            </group>
+          )
+        })}
+
+        {SAMPLES.map(([x, z], i) => (
+          <mesh key={i} position={[x, 0.06, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>
+            <sphereGeometry args={[0.06, 10, 10]} />
+            <meshStandardMaterial color="#FFFFFF" />
+          </mesh>
+        ))}
+
+        {pins.map(({ m, xz }) => {
+          const active = m.media_id === selectedMediaId
+          return (
+            <group
+              key={m.media_id}
+              position={[xz[0], 0, xz[1]]}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectMedia(m.media_id)
+              }}
+              onPointerOver={() => setHover(`Foto ${m.date ? m.date.slice(0, 10) : ''}${m.description ? `: ${m.description}` : ''}`)}
+              onPointerOut={() => setHover(null)}
+            >
+              <mesh position={[0, 0.35, 0]} rotation={[Math.PI, 0, 0]}>
+                <coneGeometry args={[0.09, 0.3, 12]} />
+                <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
+              </mesh>
+              <mesh position={[0, 0.55, 0]}>
+                <sphereGeometry args={[0.1, 12, 12]} />
+                <meshStandardMaterial color={active ? PIN_COLOR_ACTIVE : PIN_COLOR} />
+              </mesh>
+            </group>
+          )
+        })}
+
+        <OrbitControls ref={controls} makeDefault enablePan={false} minPolarAngle={ISO_POLAR} maxPolarAngle={ISO_POLAR} target={[0, 0.4, 0]} />
+        <CameraRig controls={controls} />
+      </Canvas>
+
+      {hover && (
+        <div className="pointer-events-none absolute bottom-3 left-3 max-w-[45%] rounded bg-background/90 px-2 py-1 text-xs shadow lg:left-1/2" role="status">
+          {hover}
         </div>
-        {sensorSpots.length > 0 && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            aria-pressed={showLabels}
-            className="absolute right-3 top-3 z-20 bg-background/90"
-            onClick={() => setShowLabels((v) => !v)}
-          >
-            <Tag className="mr-2 h-4 w-4" aria-hidden="true" />
-            Label sensor
-          </Button>
-        )}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="absolute bottom-3 right-3 z-20 bg-background/90"
-          onClick={() => controls.current?.reset?.()}
-        >
-          <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-          Reset tampilan
-        </Button>
-      </div>
-      <figcaption className="text-center text-xs text-muted-foreground">
-        Cuplikan 6 × 6 m, jajar legowo 2:1; bukan skala petak. Geser untuk memutar, gulir untuk memperbesar. Tinggi {Math.round(heightCm)} cm, {Math.round(tillers)} anakan per rumpun.
-        {hasWater(phaseSeq) ? ' Sawah tergenang.' : ' Sawah sudah dikeringkan.'}
-      </figcaption>
-    </figure>
+      )}
+    </div>
   )
 }
