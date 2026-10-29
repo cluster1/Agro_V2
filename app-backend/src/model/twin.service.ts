@@ -313,6 +313,7 @@ export class TwinService {
       return {
         ds_id: d.ds_id,
         dev_id: d.dev_id,
+        sens_id: d.sens_id ?? null,
         name: d.ds_name,
         kt_id: d.kt_id ?? null,
         value: r ? Number(r.read_update_value) : null,
