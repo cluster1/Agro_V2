@@ -33,6 +33,13 @@ export interface Plot3DApi {
   reset: () => void
 }
 
+export interface Insets {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
 export interface Plot3DProps {
   /** tinggi rata-rata (cm) dan anakan per rumpun pada tanggal slider */
   heightCm: number
@@ -49,6 +56,8 @@ export interface Plot3DProps {
   sensors: SceneSensor[]
   /** tampilkan label data melayang di atas sensor */
   showLabels: boolean
+  /** piksel kanvas yang tertutup panel mengambang; model dipasang di area bebas sisanya */
+  insets: Insets
   /** diisi dengan perintah kamera; ref dipakai karena next/dynamic tidak meneruskan `ref` */
   api: React.MutableRefObject<Plot3DApi | null>
   /** pengendali atau sensor yang diklik; disorot di model */
@@ -266,13 +275,25 @@ const UP = new THREE.Vector3(0, 1, 0)
 
 type Controls = React.ElementRef<typeof OrbitControls>
 
-/** Zoom awal mengikuti ukuran kanvas supaya cuplikan 6 x 6 m dan tiangnya selalu muat; batas zoom 0,6x sampai 3x. */
-function CameraRig({ controls }: { controls: React.RefObject<Controls> }) {
+/** Luas cuplikan di layar pada zoom 1 (satuan dunia): lebar diagonal petak + label, dan tinggi miring + tiang 2 m. */
+const FIT_WIDTH = 12.5
+const FIT_HEIGHT = 9.5
+
+/**
+ * Zoom awal menyesuaikan ukuran kanvas dan area yang tidak tertutup panel, supaya cuplikan 6 x 6 m dan tiangnya
+ * selalu muat; model digeser ke tengah area bebas. Batas zoom 0,6x sampai 3x dari zoom awal. Tombol Reset kembali ke sini.
+ */
+function CameraRig({ controls, insets }: { controls: React.RefObject<Controls>; insets: Insets }) {
   const { size, camera } = useThree()
+  const { top, right, bottom, left } = insets
   useLayoutEffect(() => {
     const cam = camera as THREE.OrthographicCamera
-    const base = Math.max(12, Math.min(size.width, size.height) / 11)
+    const freeW = Math.max(160, size.width - left - right)
+    const freeH = Math.max(160, size.height - top - bottom)
+    const base = Math.max(12, Math.min(freeW / FIT_WIDTH, freeH / FIT_HEIGHT))
     cam.zoom = base
+    if (left || right || top || bottom) cam.setViewOffset(size.width, size.height, (right - left) / 2, (bottom - top) / 2, size.width, size.height)
+    else cam.clearViewOffset()
     cam.updateProjectionMatrix()
     const c = controls.current
     if (c) {
@@ -281,13 +302,13 @@ function CameraRig({ controls }: { controls: React.RefObject<Controls> }) {
       c.saveState()
       c.update()
     }
-  }, [size.width, size.height, camera, controls])
+  }, [size.width, size.height, top, right, bottom, left, camera, controls])
   return null
 }
 
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, showLabels, api, selected, onSelectDevice, onSelectMedia, label } = props
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, showLabels, insets, api, selected, onSelectDevice, onSelectMedia, label } = props
   const [hoverState, setHoverState] = useState<{ label: string; clickable: boolean } | null>(null)
   const hover = hoverState?.label ?? null
   const setHover = (label: string | null, clickable = false) => setHoverState(label ? { label, clickable } : null)
@@ -471,7 +492,7 @@ export default function Plot3D(props: Plot3DProps) {
         })}
 
         <OrbitControls ref={controls} makeDefault enablePan={false} minPolarAngle={ISO_POLAR} maxPolarAngle={ISO_POLAR} target={[0, 0.4, 0]} />
-        <CameraRig controls={controls} />
+        <CameraRig controls={controls} insets={insets} />
       </Canvas>
 
       {hover && (

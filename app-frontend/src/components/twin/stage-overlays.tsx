@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, RotateCcw, RotateCw, Tag, ZoomIn, ZoomOut } from 'lucide-react'
+import { Home, PanelRightClose, PanelRightOpen, RotateCcw, RotateCw, Tag, ZoomIn, ZoomOut } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDateTime, formatNumber } from '@/lib/format'
@@ -76,16 +76,29 @@ export function PlotCard({ twin }: { twin: PlantTwin }) {
 
 interface StageToolbarProps {
   api: React.MutableRefObject<Plot3DApi | null>
-  showLabels: boolean
-  onToggleLabels: () => void
-  hasSensors: boolean
+  panelsOpen: boolean
+  onTogglePanels: () => void
+  /** id elemen panel yang dikendalikan tombol sembunyikan */
+  panelsId: string
 }
 
-/** Toolbar kamera: zoom, putar seperempat putaran, reset, dan label sensor. */
-export function StageToolbar({ api, showLabels, onToggleLabels, hasSensors }: StageToolbarProps) {
+/** Toolbar kamera: sembunyikan/tampilkan panel info, zoom, putar seperempat putaran, dan reset. */
+export function StageToolbar({ api, panelsOpen, onTogglePanels, panelsId }: StageToolbarProps) {
   const btn = 'h-11 w-11 bg-background/90 shadow'
   return (
     <div role="toolbar" aria-label="Kontrol kamera 3D" className="flex gap-2 lg:flex-col">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className={btn}
+        aria-label={panelsOpen ? 'Sembunyikan panel info' : 'Tampilkan panel info'}
+        aria-expanded={panelsOpen}
+        aria-controls={panelsId}
+        onClick={onTogglePanels}
+      >
+        {panelsOpen ? <PanelRightClose className="h-4 w-4" aria-hidden="true" /> : <PanelRightOpen className="h-4 w-4" aria-hidden="true" />}
+      </Button>
       <Button type="button" variant="outline" size="icon" className={btn} aria-label="Perbesar" onClick={() => api.current?.zoomIn()}>
         <ZoomIn className="h-4 w-4" aria-hidden="true" />
       </Button>
@@ -101,11 +114,16 @@ export function StageToolbar({ api, showLabels, onToggleLabels, hasSensors }: St
       <Button type="button" variant="outline" size="icon" className={btn} aria-label="Reset tampilan" onClick={() => api.current?.reset()}>
         <Home className="h-4 w-4" aria-hidden="true" />
       </Button>
-      {hasSensors && (
-        <Button type="button" variant="outline" size="icon" className={btn} aria-label="Label sensor" aria-pressed={showLabels} onClick={onToggleLabels}>
-          <Tag className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      )}
     </div>
+  )
+}
+
+/** Tombol aktif/nonaktif label data sensor di atas model; ditaruh di kiri bawah kanvas. */
+export function SensorLabelToggle({ showLabels, onToggle }: { showLabels: boolean; onToggle: () => void }) {
+  return (
+    <Button type="button" variant="outline" className="h-11 bg-background/90 shadow" aria-pressed={showLabels} onClick={onToggle}>
+      <Tag className="mr-2 h-4 w-4" aria-hidden="true" />
+      Label sensor: {showLabels ? 'aktif' : 'nonaktif'}
+    </Button>
   )
 }
