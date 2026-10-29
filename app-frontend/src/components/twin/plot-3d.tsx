@@ -4,13 +4,16 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, Tag } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Cpu, Radio, RotateCcw, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatNumber } from '@/lib/format'
+import { formatDateTime, formatNumber } from '@/lib/format'
 import {
   N_STATUS,
+  deviceSummaries,
   paramState,
+  type DeviceSummary,
   type PlantTwin,
+  type SensorParam,
   PIN_COLOR,
   PIN_COLOR_ACTIVE,
   grainColor,
@@ -40,6 +43,8 @@ export interface Plot3DProps {
   /** pengendali (kamera menyatu dengannya) dan sensor, diposisikan dari koordinat tabel sensor */
   controllers: SceneController[]
   sensors: SceneSensor[]
+  /** parameter sensor petak (nilai, batas, waktu baca), untuk panel Perangkat & sensor */
+  parameters: SensorParam[]
   /** defisit hara dari model (kg/ha), untuk panel status hara di atas model */
   nutrients: PlantTwin['nutrients']
   /** pengendali atau sensor yang diklik; disorot dan infonya ditampilkan di luar kanvas */
@@ -239,7 +244,7 @@ function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof 
     { label: 'K₂O', value: nutrients.k2o_def, unit: 'kg/ha' },
   ]
   return (
-    <div className="absolute bottom-3 left-3 z-20 max-w-[min(18rem,calc(100%-9rem))] rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
+    <div className="rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -285,6 +290,105 @@ function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof 
   )
 }
 
+function ParamRow({ p }: { p: SensorParam }) {
+  const st = paramState(p)
+  const bad = st === 'low' || st === 'high'
+  const title = `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}${p.read_at ? ` · dibaca ${formatDateTime(p.read_at)}` : ''}`
+  return (
+    <li className="flex items-center justify-between gap-2" title={title}>
+      <span className="truncate text-muted-foreground">{p.name}</span>
+      <span className={`inline-flex shrink-0 items-center gap-1 font-medium tabular-nums ${bad ? 'text-destructive' : ''}`}>
+        {bad && <AlertTriangle className="h-3 w-3" aria-hidden="true" />}
+        {p.value === null ? '-' : formatNumber(p.value)}
+        {bad && <span className="sr-only">{st === 'low' ? 'di bawah batas peringatan' : 'di atas batas peringatan'}</span>}
+      </span>
+    </li>
+  )
+}
+
+/** Panel Perangkat & sensor di atas model: keterangan lengkap tiap pengendali dan sensornya, juga yang belum punya koordinat. */
+function DeviceHud({ devices, selected, onSelect }: { devices: DeviceSummary[]; selected: SceneSelection | null; onSelect: (s: SceneSelection) => void }) {
+  const [open, setOpen] = useState(true)
+  const sensorCount = devices.reduce((n, d) => n + d.sensors.length, 0)
+  const isSel = (kind: SceneSelection['kind'], id: string) => selected?.kind === kind && selected.id === id
+  return (
+    <div className="rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="twin-hud-devices"
+        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 font-medium"
+      >
+        <span className="flex items-center gap-1.5">
+          <Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Perangkat &amp; sensor · {devices.length} perangkat, {sensorCount} sensor
+        </span>
+        {open ? <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" /> : <ChevronUp className="h-4 w-4 shrink-0" aria-hidden="true" />}
+      </button>
+      {open && (
+        <div id="twin-hud-devices" className="max-h-48 space-y-3 overflow-y-auto border-t px-3 py-2">
+          {devices.length === 0 ? (
+            <p className="text-muted-foreground">Belum ada perangkat di cluster petak ini.</p>
+          ) : (
+            devices.map(({ controller: c, sensors, loose }) => (
+              <section key={c.dev_id} aria-label={`Perangkat ${c.name}`} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => onSelect({ kind: 'controller', id: c.dev_id })}
+                  aria-pressed={isSel('controller', c.dev_id)}
+                  className={`flex min-h-11 w-full items-center justify-between gap-2 rounded px-1 text-left font-semibold ${isSel('controller', c.dev_id) ? 'bg-amber-500/20' : ''}`}
+                >
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{c.name}</span>
+                  </span>
+                  <span className="shrink-0 font-normal text-muted-foreground">{c.status === 1 ? 'Aktif' : c.status === null ? '-' : 'Nonaktif'}</span>
+                </button>
+                {c.cameras.length > 0 && <p className="px-1 text-muted-foreground">Kamera: {c.cameras.join(', ')}</p>}
+                {sensors.length === 0 && loose.length === 0 && <p className="px-1 text-muted-foreground">Belum ada sensor pada perangkat ini.</p>}
+                {sensors.map((s) => (
+                  <div key={s.sens_id} className="pl-3">
+                    <button
+                      type="button"
+                      onClick={() => onSelect({ kind: 'sensor', id: s.sens_id })}
+                      aria-pressed={isSel('sensor', s.sens_id)}
+                      className={`flex min-h-11 w-full items-center gap-1.5 rounded px-1 text-left font-medium ${isSel('sensor', s.sens_id) ? 'bg-amber-500/20' : ''}`}
+                    >
+                      <Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{s.name}</span>
+                      {s.type && <span className="shrink-0 font-normal text-muted-foreground">· {s.type}</span>}
+                    </button>
+                    {s.params.length === 0 ? (
+                      <p className="px-1 text-muted-foreground">belum ada parameter terhubung</p>
+                    ) : (
+                      <ul className="space-y-0.5 px-1" aria-label={`Parameter ${s.name}`}>
+                        {s.params.map((p) => (
+                          <ParamRow key={p.ds_id} p={p} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+                {loose.length > 0 && (
+                  <div className="pl-3">
+                    <p className="px-1 font-medium">Parameter lain</p>
+                    <ul className="space-y-0.5 px-1" aria-label={`Parameter lain ${c.name}`}>
+                      {loose.map((p) => (
+                        <ParamRow key={p.ds_id} p={p} />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Peta lon/lat ke koordinat cuplikan [-HALF, HALF] berdasarkan kotak batas polygon petak. */
 function mapToPlot(geom: GeoJsonPolygon | null, lon: number, lat: number): [number, number] | null {
   const ring = ringOf(geom)
@@ -307,8 +411,9 @@ const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
 
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, nutrients, selected, onSelectDevice, onSelectMedia, label } = props
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, parameters, nutrients, selected, onSelectDevice, onSelectMedia, label } = props
   const [showLabels, setShowLabels] = useState(true)
+  const devices = useMemo(() => deviceSummaries(controllers, parameters), [controllers, parameters])
   const [hoverState, setHoverState] = useState<{ label: string; clickable: boolean } | null>(null)
   const hover = hoverState?.label ?? null
   const setHover = (label: string | null, clickable = false) => setHoverState(label ? { label, clickable } : null)
@@ -458,7 +563,10 @@ export default function Plot3D(props: Plot3DProps) {
             {hover}
           </div>
         )}
-        <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={nutrients} />
+        <div className="absolute bottom-3 left-3 z-20 flex max-h-[calc(100%-4.5rem)] max-w-[min(18rem,calc(100%-9rem))] flex-col gap-2 overflow-y-auto">
+          <DeviceHud devices={devices} selected={selected} onSelect={onSelectDevice} />
+          <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={nutrients} />
+        </div>
         {sensorSpots.length > 0 && (
           <Button
             type="button"

@@ -234,6 +234,27 @@ export function sensorScene(map: TwinMapData | undefined, clusterId: string | nu
   return { controllers, sensors: placed }
 }
 
+export interface DeviceSummary {
+  controller: SceneController
+  /** semua sensor (bukan kamera) milik pengendali, termasuk yang belum punya koordinat */
+  sensors: { sens_id: string; name: string; type: string | null; params: SensorParam[] }[]
+  /** parameter pengendali yang tidak terkait ke sensor mana pun */
+  loose: SensorParam[]
+}
+
+/** Keterangan lengkap tiap pengendali: sensornya dengan semua parameter, plus parameter yang tidak terkait sensor. */
+export function deviceSummaries(controllers: SceneController[], params: SensorParam[]): DeviceSummary[] {
+  const bySens = parametersBySensor(params)
+  return controllers.map((c) => {
+    const own = new Set(c.sensors.map((s) => s.sens_id))
+    return {
+      controller: c,
+      sensors: c.sensors.map((s) => ({ ...s, params: bySens.get(s.sens_id) ?? [] })),
+      loose: params.filter((p) => p.dev_id === c.dev_id && (!p.sens_id || !own.has(p.sens_id))),
+    }
+  })
+}
+
 export interface WeatherDay {
   date: string
   type: string

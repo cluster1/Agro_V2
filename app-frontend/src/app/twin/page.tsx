@@ -276,6 +276,7 @@ export default function TwinPage() {
                     selectedMediaId={mediaId}
                     controllers={scene.controllers}
                     sensors={scene.sensors}
+                    parameters={twin.sensors}
                     nutrients={twin.nutrients}
                     selected={picked}
                     onSelectDevice={setPicked}
