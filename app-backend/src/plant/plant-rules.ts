@@ -26,6 +26,15 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 }
 
+/** 'YYYY-MM-DD' (local calendar day) from a date column value (string or Date). */
+export function dayOf(value: Date | string): string {
+  if (value instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  }
+  return String(value).slice(0, 10);
+}
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }

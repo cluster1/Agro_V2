@@ -8,17 +8,13 @@ import { PlantPhase } from '../ref/entities/plant-phase.entity';
 import { VarietyPhase } from '../ref/entities/variety-phase.entity';
 import { ModelService } from './model.service';
 import { scoped } from '../common/utils/scope';
-import { daysBetween } from '../plant/plant-rules';
-import { round } from './model-config';
+import { dayOf, daysBetween } from '../plant/plant-rules';
+import { mean, round } from './model-config';
 
 /** Plots needed before a calibration proposal is offered (FSD F-MDL-07). */
 export const MIN_PLOTS = 3;
 /** A phase counts as reached when this share of the population is in it. */
 export const REACHED_PCT = 50;
-
-const pad = (n: number) => String(n).padStart(2, '0');
-const dayOf = (v: Date | string): string =>
-  v instanceof Date ? `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}` : String(v).slice(0, 10);
 
 export interface PhaseObservation {
   plant_id: string;
@@ -110,19 +106,28 @@ export class CalibrationService {
       const cur = first.get(key);
       if (!cur || dayOf(o.obs_date) < dayOf(cur.obs_date)) first.set(key, o);
     }
+    const byPhase = new Map<string, Observation[]>();
+    for (const o of first.values()) byPhase.set(o.phase_id, [...(byPhase.get(o.phase_id) ?? []), o]);
+
+    // GDD up to a date is the same for every phase of a plant that reaches it on that date
+    const gddCache = new Map<string, Promise<number | null>>();
+    const gddOf = (plant: Plant, date: string) => {
+      const key = `${plant.plant_id}|${date}`;
+      if (!gddCache.has(key)) gddCache.set(key, this.model.gddUntil(plant, variety, date));
+      return gddCache.get(key)!;
+    };
 
     const out: CalibrationPhase[] = [];
     for (const phase of phases) {
       const vp = vpByPhase.get(phase.phase_id);
       if (!vp) continue;
       const observed: PhaseObservation[] = [];
-      for (const [key, o] of first) {
-        if (!key.endsWith(`|${phase.phase_id}`)) continue;
+      for (const o of byPhase.get(phase.phase_id) ?? []) {
         const plant = plantById.get(o.plant_id)!;
         if (!plant.plant_date) continue;
         const date = dayOf(o.obs_date);
         const age = daysBetween(dayOf(plant.plant_date), date);
-        const gdd = await this.model.gddUntil(plant, variety, date);
+        const gdd = await gddOf(plant, date);
         observed.push({
           plant_id: plant.plant_id,
           plant_name: plant.plant_name ?? null,
@@ -136,8 +141,8 @@ export class CalibrationService {
       observed.sort((a, b) => a.date.localeCompare(b.date));
 
       const withGdd = observed.filter((o) => o.gdd !== null);
-      const meanAge = observed.length ? round(observed.reduce((s, o) => s + o.age, 0) / observed.length, 1) : null;
-      const meanGdd = withGdd.length ? round(withGdd.reduce((s, o) => s + (o.gdd as number), 0) / withGdd.length, 0) : null;
+      const meanAge = mean(observed.map((o) => o.age), 1);
+      const meanGdd = mean(withGdd.map((o) => o.gdd as number), 0);
       const enough = withGdd.length >= MIN_PLOTS;
 
       out.push({
@@ -175,6 +180,8 @@ export class CalibrationService {
 
     // working copy so each accepted phase is checked against the already-updated neighbours
     const gdd = new Map(phases.map((p) => [p.phase_id, p.estimate.gdd_start]));
+    const now = new Date();
+    const repo = this.manager.getRepository(VarietyPhase);
 
     for (const [i, p] of phases.entries()) {
       if (wanted && !wanted.has(p.phase_id)) continue;
@@ -191,8 +198,6 @@ export class CalibrationService {
         continue;
       }
 
-      const now = new Date();
-      const repo = this.manager.getRepository(VarietyPhase);
       await repo.update(
         { vp_id: p.vp_id },
         { vp_gdd_start: p.proposal.gdd_start, vp_start_age: p.proposal.start_age, vp_source: 'KALIBRASI', vp_update: now },

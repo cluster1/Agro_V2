@@ -17,7 +17,7 @@ import { VarietyPhase } from '../ref/entities/variety-phase.entity';
 import { Material } from '../ref/entities/material.entity';
 import { ActivityType } from '../ref/entities/activity-type.entity';
 import { scoped } from '../common/utils/scope';
-import { addDays, daysBetween, today } from '../plant/plant-rules';
+import { addDays, dayOf, daysBetween, today } from '../plant/plant-rules';
 import { nutrientInput, parseAmount } from '../activity/activity-rules';
 import { nutrientStatus } from '../soil/soil-rules';
 import {
@@ -45,9 +45,6 @@ const KG_UNIT = 'UNIT-KG';
 const PHASE_REACHED_PCT = 50;
 const FORECAST_LOOKAHEAD_DAYS = 60;
 
-const pad = (n: number) => String(n).padStart(2, '0');
-const dayOfDate = (v: Date | string): string =>
-  v instanceof Date ? `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}` : String(v).slice(0, 10);
 const doyOf = (day: string): number => {
   const d = Date.parse(`${day}T00:00:00Z`);
   return Math.floor((d - Date.parse(`${day.slice(0, 4)}-01-01T00:00:00Z`)) / 86_400_000) + 1;
@@ -83,7 +80,7 @@ export class ModelService {
     let forecastUntil: string | null = null;
     for (const r of rows) {
       if (r.wd_tmin === null || r.wd_tmax === null || r.wd_tmin === undefined || r.wd_tmax === undefined) continue;
-      const day = dayOfDate(r.wd_date);
+      const day = dayOf(r.wd_date);
       if (day < from || day > to) continue;
       if (r.wd_type === 'ACTUAL') actual.set(day, { tmin: r.wd_tmin, tmax: r.wd_tmax, type: 'ACTUAL' });
       else if (r.wd_type === 'FORECAST') {
@@ -159,7 +156,7 @@ export class ModelService {
       .getRepository(Observation)
       .find({ where: { plant_id: plant.plant_id, obs_sts: OBSERVATION_STATUS.VERIFIED }, order: { obs_date: 'DESC' } })) as Observation[];
     const recentFrom = addDays(now, -OBSERVATION_MAX_AGE_DAYS);
-    const recent = observations.filter((o) => dayOfDate(o.obs_date) >= recentFrom);
+    const recent = observations.filter((o) => dayOf(o.obs_date) >= recentFrom);
     const latest = recent[0] ?? null;
     const firstWith = <K extends keyof Observation>(key: K, list = recent) => list.find((o) => o[key] !== null && o[key] !== undefined);
 
@@ -277,7 +274,7 @@ export class ModelService {
     const actualByPhase = new Map<string, string>();
     for (const o of [...observations].reverse()) {
       if (o.phase_id && (o.obs_phase_pct ?? 0) >= PHASE_REACHED_PCT && !actualByPhase.has(o.phase_id)) {
-        actualByPhase.set(o.phase_id, dayOfDate(o.obs_date));
+        actualByPhase.set(o.phase_id, dayOf(o.obs_date));
       }
     }
     const simPhases = timeline.phases.map((p) => {
@@ -415,8 +412,8 @@ export class ModelService {
     const open = (await this.manager.getRepository(Schedule).find({ where: { plant_id: plant.plant_id } })) as Schedule[];
     const candidates = open
       .filter((s) => fertTypeIds.has(s.actype_id) && (s.sched_sts === SCHEDULE_STATUS.PLANNED || s.sched_sts === SCHEDULE_STATUS.OVERDUE))
-      .filter((s) => Math.abs(daysBetween(target, dayOfDate(s.sched_start_date))) <= RECOMMENDATION_WINDOW_DAYS)
-      .sort((a, b) => Math.abs(daysBetween(target, dayOfDate(a.sched_start_date))) - Math.abs(daysBetween(target, dayOfDate(b.sched_start_date))));
+      .filter((s) => Math.abs(daysBetween(target, dayOf(s.sched_start_date))) <= RECOMMENDATION_WINDOW_DAYS)
+      .sort((a, b) => Math.abs(daysBetween(target, dayOf(a.sched_start_date))) - Math.abs(daysBetween(target, dayOf(b.sched_start_date))));
 
     const nowDate = new Date();
     if (candidates[0]) {
@@ -467,7 +464,7 @@ export class ModelService {
     for (const r of rows) {
       await this.manager
         .getRepository(SimPhase)
-        .update({ sp_id: r.sp_id }, { sp_actual_date: actualDay, sp_error_day: daysBetween(actualDay, dayOfDate(r.sp_start_date)) });
+        .update({ sp_id: r.sp_id }, { sp_actual_date: actualDay, sp_error_day: daysBetween(actualDay, dayOf(r.sp_start_date)) });
     }
   }
 

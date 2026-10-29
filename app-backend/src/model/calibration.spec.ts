@@ -13,27 +13,7 @@ import { Simulation } from './entities/simulation.entity';
 import { SimPhase } from './entities/sim-phase.entity';
 import { ROLES_KEY } from '../common/decorators/roles.decorator';
 import * as ExcelJS from 'exceljs';
-
-const eq = (row: any, where: Record<string, any>) =>
-  Object.entries(where).every(([k, v]) => {
-    if (v && typeof v === 'object' && '_type' in v) return v._type === 'in' ? v._value.includes(row[k]) : true;
-    return row[k] === v;
-  });
-
-function makeManager(tables: Map<unknown, any[]>) {
-  const repoOf = (entity: unknown) => ({
-    find: jest.fn(async (opts: any = {}) => (tables.get(entity) ?? []).filter((r) => eq(r, opts.where ?? {})).map((r) => ({ ...r }))),
-    findOne: jest.fn(async (opts: any) => {
-      const r = (tables.get(entity) ?? []).find((x) => eq(x, opts.where ?? {}));
-      return r ? { ...r } : null;
-    }),
-    update: jest.fn(async (where: any, patch: any) => {
-      (tables.get(entity) ?? []).filter((r) => eq(r, where)).forEach((r) => Object.assign(r, patch));
-    }),
-  });
-  const repos = new Map<unknown, ReturnType<typeof repoOf>>();
-  return { getRepository: (e: unknown) => (repos.has(e) ? repos.get(e)! : (repos.set(e, repoOf(e)), repos.get(e)!)) };
-}
+import { makeManager } from '../test-utils/fake-manager';
 
 // ------------------------------------------------------------------ calibration
 
@@ -105,6 +85,14 @@ describe('CalibrationService.report', () => {
     const p = (await service.report('V1', 'T1')).phases.find((x) => x.phase_id === 'PH3')!;
     expect(p.observed).toEqual([]);
     expect(p.mean_gdd).toBeNull();
+  });
+
+  it('computes GDD once per plant and date even when several phases were reached that day', async () => {
+    const { service, model } = calSetup({ observations: [obs('P1', 'PH2', '2026-10-21'), obs('P1', 'PH3', '2026-10-21'), obs('P2', 'PH3', '2026-10-21')] });
+    const r = await service.report('V1', 'T1');
+    expect(r.phases.find((x) => x.phase_id === 'PH2')!.observed).toHaveLength(1);
+    expect(r.phases.find((x) => x.phase_id === 'PH3')!.observed).toHaveLength(2);
+    expect(model.gddUntil).toHaveBeenCalledTimes(2); // P1 once, P2 once
   });
 
   it('uses only the earliest reached observation of a plant for a phase', async () => {
@@ -281,6 +269,16 @@ describe('AccuracyService.report', () => {
     const { rows, summary } = await accSetup({ plants: [] }).report('T1');
     expect(rows).toEqual([]);
     expect(summary).toMatchObject({ runs: 0, mae_day: null, mape_pct: null, bias_pct: null });
+  });
+
+  it('writes the run date as the local calendar day, not the UTC day', async () => {
+    const svc = accSetup({
+      sims: [{ sim_id: 'S1', plant_id: 'P1', sim_scenario: 'BASE', sim_is_latest: 1, sim_yield: 5, sim_date: new Date(2026, 9, 24, 3, 0, 0) }], // 03:00 local
+    });
+    const { rows, summary } = await svc.report('T1');
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load((await svc.toXlsx(rows, summary)) as any);
+    expect(wb.getWorksheet('Akurasi Model')!.getRow(2).getCell(4).value).toBe('2026-10-24');
   });
 
   it('exports an XLSX with the rows and a summary sheet, neutralising formula-like names', async () => {

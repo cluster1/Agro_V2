@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { CalibrationAccess } from '../common/decorators/calibration.decorator';
@@ -10,23 +9,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { TenantScope } from '../common/decorators/tenant-scope.decorator';
 import { CalibrationService } from './calibration.service';
 import { AccuracyService } from './accuracy.service';
-import { ApplyCalibrationDto } from './dto/calibration.dto';
-
-class AccuracyQueryDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(32)
-  varId?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(16)
-  season?: string;
-
-  @IsOptional()
-  @IsIn(['json', 'xlsx'])
-  format?: 'json' | 'xlsx';
-}
+import { AccuracyQueryDto, ApplyCalibrationDto } from './dto/calibration.dto';
 
 @ApiTags('calibration')
 @ApiBearerAuth()

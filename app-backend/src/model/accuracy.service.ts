@@ -11,7 +11,8 @@ import { Simulation } from './entities/simulation.entity';
 import { SimPhase } from './entities/sim-phase.entity';
 import { parseAmount } from '../activity/activity-rules';
 import { scoped } from '../common/utils/scope';
-import { round } from './model-config';
+import { dayOf } from '../plant/plant-rules';
+import { mean, round } from './model-config';
 
 export const UBINAN_ACTIVITY = 'ACT-PD-UBINAN';
 
@@ -131,7 +132,7 @@ export class AccuracyService {
         sim_id: sim.sim_id,
         sim_date: sim.sim_date,
         phases_compared: errors.length,
-        mean_abs_error_day: errors.length ? round(errors.reduce((s, e) => s + Math.abs(e.error_day), 0) / errors.length, 1) : null,
+        mean_abs_error_day: mean(errors.map((e) => Math.abs(e.error_day)), 1),
         phase_errors: errors,
         pred_yield: pred,
         actual_yield: actual,
@@ -150,10 +151,10 @@ export class AccuracyService {
     return {
       runs: rows.length,
       runs_with_phase: rows.filter((r) => r.phases_compared > 0).length,
-      mae_day: phaseErrors.length ? round(phaseErrors.reduce((a, b) => a + b, 0) / phaseErrors.length, 1) : null,
+      mae_day: mean(phaseErrors, 1),
       runs_with_yield: yields.length,
-      mape_pct: yields.length ? round(yields.reduce((s, v) => s + Math.abs(v), 0) / yields.length, 1) : null,
-      bias_pct: yields.length ? round(yields.reduce((s, v) => s + v, 0) / yields.length, 1) : null,
+      mape_pct: mean(yields.map(Math.abs), 1),
+      bias_pct: mean(yields, 1),
     };
   }
 
@@ -181,7 +182,7 @@ export class AccuracyService {
         ...r,
         plant_name: text(r.plant_name),
         variety: text(r.variety),
-        sim_date: r.sim_date ? String(r.sim_date instanceof Date ? r.sim_date.toISOString() : r.sim_date).slice(0, 10) : '',
+        sim_date: r.sim_date ? dayOf(r.sim_date) : '',
       });
     }
     const sum = wb.addWorksheet('Ringkasan');

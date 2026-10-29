@@ -68,3 +68,7 @@ export const round = (n: number, digits: number): number => {
   const f = 10 ** digits;
   return Math.round(n * f) / f;
 };
+
+/** Rounded mean, or null for an empty list. */
+export const mean = (values: number[], digits: number): number | null =>
+  values.length ? round(values.reduce((s, v) => s + v, 0) / values.length, digits) : null;

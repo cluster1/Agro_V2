@@ -3,20 +3,11 @@ import { Plant } from '../plant/entities/plant.entity';
 import { Site } from '../site/entities/site.entity';
 import { Device } from '../device/entities/device.entity';
 import { Sensor } from '../sensor/entities/sensor.entity';
-
-const eq = (row: any, where: Record<string, any>) =>
-  Object.entries(where).every(([k, v]) => {
-    if (v && typeof v === 'object' && '_type' in v) return v._type === 'in' ? v._value.includes(row[k]) : true;
-    return row[k] === v;
-  });
+import { makeManager } from '../test-utils/fake-manager';
 
 function setup(tables: Map<unknown, any[]>) {
-  const repoOf = (entity: unknown) => ({
-    find: jest.fn(async (opts: any = {}) => (tables.get(entity) ?? []).filter((r) => eq(r, opts.where ?? {})).map((r) => ({ ...r }))),
-  });
-  const repos = new Map<unknown, ReturnType<typeof repoOf>>();
-  const manager = { getRepository: (e: unknown) => (repos.has(e) ? repos.get(e)! : (repos.set(e, repoOf(e)), repos.get(e)!)) };
-  const plants = { ...repoOf(Plant), manager };
+  const manager = makeManager(tables);
+  const plants = { find: manager.getRepository(Plant).find, manager };
   return new TwinService(plants as any, {} as any);
 }
 
