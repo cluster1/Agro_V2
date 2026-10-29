@@ -6,7 +6,7 @@ import { N_STATUS, deviceSummaries, nStatus, type PlantTwin, type SceneSelection
 import type { ColorMode } from '@/components/twin/plot-map'
 import type { Plot3DApi } from '@/components/twin/plot-3d'
 import { DeviceHud, NutrientHud } from '@/components/twin/hud-panels'
-import { PhaseStepper, PlotCard, StageKpis, StageToolbar } from '@/components/twin/stage-overlays'
+import { PlotCard, StageKpis, StageToolbar } from '@/components/twin/stage-overlays'
 
 // three.js is heavy and needs the browser: load it only when the 3D view is shown
 const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
@@ -32,7 +32,7 @@ interface TwinStageProps {
 
 /**
  * Tampilan 3D penuh dengan panel mengambang: ringkasan di kiri atas, kolom petak/hara/perangkat di kanan,
- * tracker fase di kiri bawah, dan toolbar kamera. Di bawah lebar lg panel ditumpuk di bawah kanvas.
+ * dan toolbar kamera. Di bawah lebar lg panel ditumpuk di bawah kanvas.
  */
 export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, tillerNow, mode, scene, mediaId, picked, onPick, onSelectMedia }: TwinStageProps) {
   const api = useRef<Plot3DApi | null>(null)
@@ -82,10 +82,6 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
             <PlotCard twin={twin} />
             <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={twin.nutrients} />
             <DeviceHud devices={devices} selected={picked} onSelect={onPick} />
-          </div>
-
-          <div className="lg:pointer-events-auto lg:absolute lg:bottom-3 lg:left-3 lg:max-w-[48%]">
-            <PhaseStepper phases={twin.phases} timeline={twin.simulation?.timeline ?? []} currentSeq={currentSeq} />
           </div>
         </div>
       </div>

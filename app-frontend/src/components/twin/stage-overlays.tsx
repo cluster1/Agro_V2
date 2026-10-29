@@ -1,10 +1,10 @@
 'use client'
 
-import { Check, Home, RotateCcw, RotateCw, Tag, ZoomIn, ZoomOut } from 'lucide-react'
+import { Home, RotateCcw, RotateCw, Tag, ZoomIn, ZoomOut } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { N_STATUS, nStatus, paramState, type PlantTwin, type TimelineEntry, type TwinPhase } from '@/lib/twin'
+import { N_STATUS, nStatus, paramState, type PlantTwin, type TimelineEntry } from '@/lib/twin'
 import type { Plot3DApi } from '@/components/twin/plot-3d'
 
 function Kpi({ label, value, hint, dot }: { label: string; value: string; hint: string; dot?: string | null }) {
@@ -70,37 +70,6 @@ export function PlotCard({ twin }: { twin: PlantTwin }) {
         {twin.plant.season && <Badge variant="outline">{twin.plant.season}</Badge>}
         {twin.plant.area_ha != null && <Badge variant="outline">{formatNumber(twin.plant.area_ha)} ha</Badge>}
       </div>
-    </section>
-  )
-}
-
-/** Tracker fase di kiri bawah: fase yang sudah lewat, fase sekarang, dan fase berikutnya dengan tanggal mulainya. */
-export function PhaseStepper({ phases, timeline, currentSeq }: { phases: TwinPhase[]; timeline: TimelineEntry[]; currentSeq: number | null }) {
-  const ordered = [...phases].sort((a, b) => a.seq - b.seq)
-  if (ordered.length === 0) return null
-  return (
-    <section aria-label="Tahap pertumbuhan" className="rounded-md border bg-background/90 px-3 py-2 text-xs shadow backdrop-blur-sm">
-      <p className="mb-1.5 font-semibold">Tahap pertumbuhan</p>
-      <ol className="flex gap-3 overflow-x-auto pb-1">
-        {ordered.map((p) => {
-          const start = timeline.find((t) => t.phase_id === p.phase_id)?.start
-          const state = currentSeq === null ? 'next' : p.seq < currentSeq ? 'done' : p.seq === currentSeq ? 'now' : 'next'
-          return (
-            <li key={p.phase_id} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center" aria-current={state === 'now' ? 'step' : undefined}>
-              <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 font-semibold tabular-nums ${
-                  state === 'done' ? 'border-primary bg-primary text-primary-foreground' : state === 'now' ? 'border-primary bg-background text-primary ring-2 ring-primary/30' : 'border-muted-foreground/40 text-muted-foreground'
-                }`}
-              >
-                {state === 'done' ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : p.seq}
-              </span>
-              <span className={`leading-tight ${state === 'now' ? 'font-semibold' : ''}`}>{p.name}</span>
-              <span className="text-[11px] text-muted-foreground tabular-nums">{start ? formatDateTime(start, 'dd MMM') : '-'}</span>
-              <span className="sr-only">{state === 'done' ? 'selesai' : state === 'now' ? 'sedang berlangsung' : 'berikutnya'}</span>
-            </li>
-          )
-        })}
-      </ol>
     </section>
   )
 }
