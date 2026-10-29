@@ -12,6 +12,7 @@ import { PageTitle } from '@/components/ui/page-title'
 import { ErrorState } from '@/components/ui/error-state'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { PAGE_SIZE, TablePagination, clampPage } from '@/components/ui/table-pagination'
 import { Database, Plus, Search } from 'lucide-react'
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/use-auth'
@@ -51,6 +52,7 @@ export default function MasterDataPage() {
   const { user } = useAuth()
   const [resource, setResource] = useState(MASTER_DATA[0].resource)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
   const [selected, setSelected] = useState<Row | null>(null)
@@ -100,6 +102,10 @@ export default function MasterDataPage() {
     )
   }, [data, search, def, names])
 
+  // dikunci ke rentang valid: data bisa menyusut setelah hapus atau refetch
+  const currentPage = clampPage(page, rows.length)
+  const pageRows = useMemo(() => rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [rows, currentPage])
+
   const openCreate = () => {
     setSelected(null)
     setFormMode('create')
@@ -144,6 +150,7 @@ export default function MasterDataPage() {
                 onValueChange={(v) => {
                   setResource(v)
                   setSearch('')
+                  setPage(1)
                 }}
               >
                 <SelectTrigger id="md-resource">
@@ -172,7 +179,10 @@ export default function MasterDataPage() {
                   type="search"
                   placeholder="Cari..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setPage(1)
+                  }}
                   className="pl-9"
                 />
               </div>
@@ -202,44 +212,47 @@ export default function MasterDataPage() {
                 <ErrorState onRetry={() => refetch()} />
               </div>
             ) : rows.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <caption className="sr-only">Data referensi {def.label}</caption>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      {def.columns.map((c) => (
-                        <TableHead key={c.key} className={`font-bold ${c.align === 'right' ? 'text-right' : ''}`}>
-                          {c.label}
-                        </TableHead>
-                      ))}
-                      {canEdit && <TableHead className="text-right font-bold">Aksi</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((r) => (
-                      <TableRow key={String(r[def.idKey])} className="hover:bg-muted/50">
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <caption className="sr-only">Data referensi {def.label}</caption>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
                         {def.columns.map((c) => (
-                          <TableCell key={c.key} className={`${c.align === 'right' ? 'text-right tabular-nums' : ''} whitespace-nowrap`}>
-                            <Cell def={def} col={c} row={r} names={names} />
-                          </TableCell>
+                          <TableHead key={c.key} className={`font-bold ${c.align === 'right' ? 'text-right' : ''}`}>
+                            {c.label}
+                          </TableHead>
                         ))}
-                        {canEdit && (
-                          <TableCell className="whitespace-nowrap text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
-                                Edit
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={() => setDeleting(r)}>
-                                Hapus
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
+                        {canEdit && <TableHead className="text-right font-bold">Aksi</TableHead>}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {pageRows.map((r) => (
+                        <TableRow key={String(r[def.idKey])} className="hover:bg-muted/50">
+                          {def.columns.map((c) => (
+                            <TableCell key={c.key} className={`${c.align === 'right' ? 'text-right tabular-nums' : ''} whitespace-nowrap`}>
+                              <Cell def={def} col={c} row={r} names={names} />
+                            </TableCell>
+                          ))}
+                          {canEdit && (
+                            <TableCell className="whitespace-nowrap text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="outline" size="sm" onClick={() => openEdit(r)}>
+                                  Edit
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => setDeleting(r)}>
+                                  Hapus
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <TablePagination page={currentPage} total={rows.length} onPageChange={setPage} />
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-16">
                 <Database className="mb-4 h-16 w-16 text-muted-foreground opacity-50" aria-hidden="true" />
