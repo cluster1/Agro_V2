@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CloudSun, Loader2, Play, Radio, Sprout } from 'lucide-react'
+import { CloudSun, Loader2, Play, Sprout } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,6 @@ import type { ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
-import { DeviceInfo } from '@/components/twin/device-info'
 
 // three.js is heavy and needs the browser: load it only when the 3D view is shown
 const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
@@ -300,8 +299,6 @@ export default function TwinPage() {
                   />
                 )}
 
-                {show3d && <DeviceInfo controllers={scene.controllers} sensors={scene.sensors} selection={picked} onSelect={setPicked} />}
-
                 <TimeSlider
                   start={range.start}
                   end={range.end}
@@ -329,77 +326,38 @@ export default function TwinPage() {
               <GroundTruth twin={twin} day={shownDay} follow={follow} selectedMediaId={mediaId} onSelect={onSelectMedia} />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <Card className="border-2">
-                <CardHeader className="bg-muted/50">
-                  <CardTitle className="flex items-center gap-2">
-                    <Radio className="h-5 w-5" aria-hidden="true" />
-                    Sensor petak
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  {twin.sensors.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Belum ada sensor yang terhubung ke petak ini.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {twin.sensors.map((s) => {
-                        const out =
-                          s.value !== null && ((s.warn_min !== null && s.value < s.warn_min) || (s.warn_max !== null && s.value > s.warn_max))
-                        return (
-                          <li key={`${s.dev_id}-${s.ds_id}`} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
-                            <span className="font-medium">{s.name}</span>
-                            <span className="text-right tabular-nums">
-                              {s.value === null ? (
-                                <span className="text-muted-foreground">belum ada data</span>
-                              ) : (
-                                <>
-                                  <Badge variant={out ? 'warning' : 'success'}>{out ? 'Di luar ambang' : 'Normal'}</Badge>{' '}
-                                  <strong>{formatNumber(s.value)}</strong>
-                                </>
-                              )}
-                              {s.read_at && <span className="block text-xs text-muted-foreground">{formatDateTime(s.read_at, 'dd MMM HH:mm')}</span>}
-                            </span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-2">
-                <CardHeader className="bg-muted/50">
-                  <CardTitle className="flex items-center gap-2">
-                    <CloudSun className="h-5 w-5" aria-hidden="true" />
-                    Cuaca
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-4 text-sm">
-                  {twin.weather.latest ? (
-                    <p className="tabular-nums">
-                      Terakhir ({formatDateTime(twin.weather.latest.date, 'dd MMM')}): {twin.weather.latest.tmin ?? '-'}-{twin.weather.latest.tmax ?? '-'} °C
-                      {twin.weather.latest.rain != null && `, hujan ${twin.weather.latest.rain} mm`}
-                      {twin.weather.latest.rh != null && `, RH ${twin.weather.latest.rh}%`}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground">Belum ada data cuaca aktual untuk site ini.</p>
-                  )}
-                  {twin.weather.forecast.length > 0 && (
-                    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {twin.weather.forecast.map((f) => (
-                        <li key={f.date} className="rounded border p-2 text-center tabular-nums">
-                          <div className="text-xs text-muted-foreground">{formatDateTime(f.date, 'dd MMM')}</div>
-                          <div>
-                            {f.tmin ?? '-'}-{f.tmax ?? '-'}°
-                          </div>
-                          {f.rain != null && <div className="text-xs">{f.rain} mm</div>}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-2">
+              <CardHeader className="bg-muted/50">
+                <CardTitle className="flex items-center gap-2">
+                  <CloudSun className="h-5 w-5" aria-hidden="true" />
+                  Cuaca
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-4 text-sm">
+                {twin.weather.latest ? (
+                  <p className="tabular-nums">
+                    Terakhir ({formatDateTime(twin.weather.latest.date, 'dd MMM')}): {twin.weather.latest.tmin ?? '-'}-{twin.weather.latest.tmax ?? '-'} °C
+                    {twin.weather.latest.rain != null && `, hujan ${twin.weather.latest.rain} mm`}
+                    {twin.weather.latest.rh != null && `, RH ${twin.weather.latest.rh}%`}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">Belum ada data cuaca aktual untuk site ini.</p>
+                )}
+                {twin.weather.forecast.length > 0 && (
+                  <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {twin.weather.forecast.map((f) => (
+                      <li key={f.date} className="rounded border p-2 text-center tabular-nums">
+                        <div className="text-xs text-muted-foreground">{formatDateTime(f.date, 'dd MMM')}</div>
+                        <div>
+                          {f.tmin ?? '-'}-{f.tmax ?? '-'}°
+                        </div>
+                        {f.rain != null && <div className="text-xs">{f.rain} mm</div>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
           </>
         )}
       </div>
