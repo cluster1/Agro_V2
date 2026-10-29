@@ -148,7 +148,8 @@ export function ObservationFormDialog({ open, onOpenChange, tenantId, observatio
   }, [open, editing, observation, form])
 
   const toggleSymptom = (code: string, checked: boolean) => {
-    setSymptoms((prev) => (checked ? [...prev, code] : prev.filter((c) => c !== code)))
+    // NORMAL saling meniadakan dengan gejala lain
+    setSymptoms((prev) => (!checked ? prev.filter((c) => c !== code) : code === 'NORMAL' ? ['NORMAL'] : [...prev.filter((c) => c !== 'NORMAL'), code]))
   }
 
   const addPhotos = (files: FileList | null) => {
@@ -369,10 +370,10 @@ export function ObservationFormDialog({ open, onOpenChange, tenantId, observatio
               </div>
 
               <fieldset className="space-y-2 rounded-md border p-4">
-                <legend className="px-1 text-sm font-medium">Gejala</legend>
+                <legend className="px-1 text-sm font-medium">Kondisi daun / gejala</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {SYMPTOMS.map((s) => (
-                    <label key={s.code} className="flex min-h-[44px] cursor-pointer items-center gap-3 text-sm">
+                    <label key={s.code} className={`flex min-h-[44px] cursor-pointer items-center gap-3 text-sm ${s.code === 'NORMAL' ? 'border-b pb-2 font-medium sm:col-span-2' : ''}`}>
                       <input
                         type="checkbox"
                         className="h-5 w-5 accent-primary"

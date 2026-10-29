@@ -1,6 +1,6 @@
 /** Tipe dan fungsi murni untuk halaman Digital Twin (data dari GET /plants/:id/twin). */
 
-import { formatNumber } from '@/lib/format'
+import { formatDateTime, formatNumber } from '@/lib/format'
 
 export interface TwinPhase {
   phase_id: string
@@ -365,6 +365,56 @@ export function leafColor(bwd: number | null): string {
 export function bwdAt(observations: TwinObservation[], day: string): number | null {
   const past = observations.filter((o) => o.date <= day && o.bwd !== null)
   return past.length ? (past[past.length - 1].bwd as number) : null
+}
+
+/** Parameter sensor nitrogen tanah (tm_sensor_read: soil_nitro), dikenali dari ds_id, kt_id, atau nama. */
+const NITROGEN_PARAM = /soil[_\s-]?nitro/i
+/** Batas hari tanpa BWD baru sebelum sensor N rendah memicu peringatan cek warna daun. */
+export const BWD_STALE_DAYS = 7
+
+export const findNitrogenParam = (params: SensorParam[]): SensorParam | null =>
+  params.find((p) => NITROGEN_PARAM.test(p.ds_id) || NITROGEN_PARAM.test(p.kt_id ?? '') || NITROGEN_PARAM.test(p.name)) ?? null
+
+export interface NitrogenCheckHint {
+  /** peringatan cek warna daun (BWD); kosong bila tidak ada yang perlu dicek */
+  messages: string[]
+  /** teks pendek per peringatan untuk panel sempit di 3D */
+  shortMessages: string[]
+  /** asal status nitrogen: pengamatan petugas atau belum ada */
+  source: string
+}
+
+/**
+ * Sinyal tambahan agar petugas mengecek warna daun. Tidak mengubah status nitrogen, kekurangan N, atau saran
+ * pupuk (semuanya tetap dari BWD). Dua pemicu:
+ * - sensor N di bawah batas peringatan dengan bacaan segar, sedangkan BWD terakhir lebih dari BWD_STALE_DAYS atau belum ada;
+ * - observasi terakhir bergejala N_KUNING, sedangkan BWD belum dicek sesudahnya (hanya bila umur 14-62 hari, rentang BWD bisa diisi).
+ */
+export function nitrogenCheckHint(twin: Pick<PlantTwin, 'observations' | 'sensors' | 'now'>): NitrogenCheckHint {
+  const today = twin.now.date
+  const day = (d: string) => d.slice(0, 10)
+  const last = [...twin.observations].reverse().find((o) => o.bwd !== null)
+  const source = last ? `Sumber: pengamatan petugas ${formatDateTime(last.date, 'dd MMM yyyy')}` : 'Belum ada pengamatan warna daun'
+  const messages: string[] = []
+  const shortMessages: string[] = []
+
+  const sensor = findNitrogenParam(twin.sensors)
+  if (sensor && paramState(sensor) === 'low' && sensor.read_at && daysBetween(day(sensor.read_at), today) <= BWD_STALE_DAYS) {
+    const gap = last ? daysBetween(day(last.date), today) : null
+    if (gap === null || gap > BWD_STALE_DAYS) {
+      const when = gap === null ? 'belum pernah dicek' : `belum dicek ${gap} hari`
+      messages.push(`Sensor menunjukkan nitrogen tanah rendah, tapi warna daun ${when}. Mohon cek warna daun (BWD) di lapangan.`)
+      shortMessages.push('Sensor N rendah: cek warna daun')
+    }
+  }
+
+  const age = twin.now.age
+  const yellow = [...twin.observations].reverse().find((o) => o.symptoms.includes('N_KUNING'))
+  if (yellow && age !== null && age >= 14 && age <= 62 && (!last || day(last.date) < day(yellow.date))) {
+    messages.push('Petugas mencatat daun menguning (kurang N), tapi warna daun (BWD) belum dicek sesudahnya. Mohon cek warna daun (BWD) di lapangan.')
+    shortMessages.push('Daun menguning: cek warna daun')
+  }
+  return { messages, shortMessages, source }
 }
 
 export type CoordSource = 'own' | 'plant' | 'device' | 'site'

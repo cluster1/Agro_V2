@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { symptomLabel } from '@/lib/observation'
-import { N_STATUS, interpolate, nStatus, type PlantTwin, type TwinObservation } from '@/lib/twin'
+import { N_STATUS, interpolate, nitrogenCheckHint, nStatus, type PlantTwin, type TwinObservation } from '@/lib/twin'
 
 const REF_COLOR = '#43A047'
 const OBS_COLOR = '#42A5F5'
@@ -118,6 +118,7 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
   const { nutrients, reference, recommendation } = twin
   const status = nStatus(nutrients.bwd, reference.bwd_min)
   const meta = N_STATUS[status]
+  const hint = nitrogenCheckHint(twin)
   const rows: { label: string; value: number | null; unit: string }[] = [
     { label: 'Nitrogen (N)', value: nutrients.n_def, unit: 'kg N/ha' },
     { label: 'Fosfor (P)', value: nutrients.p2o5_def, unit: 'kg/ha' },
@@ -142,6 +143,22 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
           {nutrients.soil_p && ` · tanah P ${nutrients.soil_p.toLowerCase()}, K ${(nutrients.soil_k ?? '').toLowerCase()}`}
         </p>
 
+        <p className="-mt-2 text-xs text-muted-foreground" title="BWD = Bagan Warna Daun, kartu warna untuk menilai kecukupan nitrogen dari warna daun">
+          {hint.source}. BWD = Bagan Warna Daun.
+        </p>
+
+        {hint.messages.length > 0 && (
+          <div role="status" className="space-y-2 rounded-md border border-warning/50 bg-warning/10 p-3 text-sm">
+            {hint.messages.map((m) => (
+              <p key={m} className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{m}</span>
+              </p>
+            ))}
+            <p className="text-xs text-muted-foreground">Status nitrogen di atas belum berubah karena tetap dihitung dari warna daun (BWD).</p>
+          </div>
+        )}
+
         <ul className="space-y-2" aria-label="Kekurangan hara">
           {rows.map((r) => (
             <li key={r.label} className="flex items-center justify-between gap-3 rounded-md border p-3">
@@ -165,7 +182,7 @@ export function NutrientPanel({ twin }: { twin: PlantTwin }) {
 
         {nutrients.symptoms.length > 0 && (
           <div>
-            <p className="mb-1 text-sm font-medium">Gejala terakhir</p>
+            <p className="mb-1 text-sm font-medium">Kondisi daun terakhir</p>
             <div className="flex flex-wrap gap-1.5">
               {nutrients.symptoms.map((c) => (
                 <Badge key={c} variant="outline">

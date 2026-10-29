@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Cpu, Radio } from 'lucide-react'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { N_STATUS, paramState, type DeviceSummary, type PlantTwin, type SceneSelection, type SensorParam } from '@/lib/twin'
+import { N_STATUS, paramState, type NitrogenCheckHint, type DeviceSummary, type PlantTwin, type SceneSelection, type SensorParam } from '@/lib/twin'
 
 /** Panel kecukupan hara di atas model: status N (warna daun pada tanggal slider) dan kekurangan N, P, K dari model. */
-export function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof typeof N_STATUS; bwd: number | null; bwdMin: number | null; nutrients: PlantTwin['nutrients'] }) {
+export function NutrientHud({ status, bwd, bwdMin, nutrients, hint }: { status: keyof typeof N_STATUS; bwd: number | null; bwdMin: number | null; nutrients: PlantTwin['nutrients']; hint: NitrogenCheckHint }) {
   const [open, setOpen] = useState(true)
   const meta = N_STATUS[status]
   const rows = [
@@ -35,6 +35,12 @@ export function NutrientHud({ status, bwd, bwdMin, nutrients }: { status: keyof 
             Warna daun: skala {bwd !== null ? String(bwd).replace('.', ',') : '-'}
             {bwdMin !== null ? ` · minimal tahap ini: ${bwdMin}` : ' · tahap ini tanpa batas warna daun'}
           </p>
+          {hint.shortMessages.map((m) => (
+            <p key={m} role="status" className="flex items-start gap-1 font-medium text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="mt-px h-3 w-3 shrink-0" aria-hidden="true" />
+              {m}
+            </p>
+          ))}
           <ul aria-label="Kekurangan hara menurut sistem" className="space-y-0.5">
             {rows.map((r) => (
               <li key={r.label} className="flex items-center justify-between gap-3">

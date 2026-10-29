@@ -67,6 +67,14 @@ describe('validateMeasurements', () => {
       ok({ obs_symptom: 'N_KUNING,P_GELAP,K_TEPI,KERDIL,ZN_BERCAK,S_PUCAT' });
     });
 
+    it('accepts NORMAL alone as an observation result', () => {
+      ok({ obs_symptom: 'NORMAL' });
+    });
+
+    it('rejects NORMAL combined with another symptom', () => {
+      bad({ obs_symptom: 'NORMAL,N_KUNING' }, undefined, /Daun normal/);
+    });
+
     it('rejects unknown codes and names them', () => {
       bad({ obs_symptom: 'N_KUNING,BUSUK' }, undefined, /BUSUK/);
     });

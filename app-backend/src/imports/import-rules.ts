@@ -34,7 +34,7 @@ export const COLUMNS: Record<ImportType, ColumnDef[]> = {
     { key: 'obs_phase_pct', kind: 'number', example: '50', note: '% populasi mencapai fase' },
     { key: 'obs_pest_name', kind: 'text', example: '', note: 'Nama hama/penyakit' },
     { key: 'obs_pest_pct', kind: 'number', example: '', note: 'Intensitas hama (%)' },
-    { key: 'obs_symptom', kind: 'symptoms', example: '', note: 'Kode dipisah koma: N_KUNING, P_GELAP, K_TEPI, KERDIL, ZN_BERCAK, S_PUCAT' },
+    { key: 'obs_symptom', kind: 'symptoms', example: '', note: 'Kode dipisah koma: NORMAL (daun normal, tidak boleh digabung), N_KUNING, P_GELAP, K_TEPI, KERDIL, ZN_BERCAK, S_PUCAT' },
     { key: 'obs_sample_n', kind: 'int', example: '20', note: 'Jumlah rumpun sampel (default 20)' },
     { key: 'obs_desc', kind: 'text', example: '', note: 'Catatan' },
   ],

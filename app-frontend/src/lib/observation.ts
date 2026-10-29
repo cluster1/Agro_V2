@@ -21,6 +21,7 @@ export const OBSERVATION_SOURCE: Record<string, string> = {
 
 /** Kode gejala (dipisah koma di obs_symptom) dan labelnya. */
 export const SYMPTOMS: { code: string; label: string }[] = [
+  { code: 'NORMAL', label: 'Daun normal, tanpa gejala' },
   { code: 'N_KUNING', label: 'Daun menguning (kurang N)' },
   { code: 'P_GELAP', label: 'Daun gelap keunguan (kurang P)' },
   { code: 'K_TEPI', label: 'Tepi daun mengering (kurang K)' },

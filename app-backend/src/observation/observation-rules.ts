@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
-export const SYMPTOM_CODES = ['N_KUNING', 'P_GELAP', 'K_TEPI', 'KERDIL', 'ZN_BERCAK', 'S_PUCAT'] as const;
+/** NORMAL = daun sudah diperiksa dan tanpa gejala; tidak boleh digabung dengan gejala lain. */
+export const SYMPTOM_CODES = ['NORMAL', 'N_KUNING', 'P_GELAP', 'K_TEPI', 'KERDIL', 'ZN_BERCAK', 'S_PUCAT'] as const;
 export const REJECT_PREFIX = 'Ditolak: ';
 
 /** Rice growth stages by generic phase sequence (tr_plant_phase.phase_seq). */
@@ -75,6 +76,8 @@ export function validateMeasurements(m: Measurements, ctx: { age: number; phaseS
       .split(',')
       .filter((c) => !(SYMPTOM_CODES as readonly string[]).includes(c));
     if (unknown.length) errors.push(`Kode gejala tidak dikenal: ${unknown.join(', ')}`);
+    const codes = String(m.obs_symptom).split(',');
+    if (codes.includes('NORMAL') && codes.length > 1) errors.push('Daun normal tidak bisa dipilih bersama gejala lain');
   }
 
   if (errors.length) throw new BadRequestException(errors.join('; '));

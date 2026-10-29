@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { N_STATUS, deviceSummaries, hasWater, nStatus, type PlantTwin, type SceneSelection, type TimelineEntry, type sensorScene } from '@/lib/twin'
+import { N_STATUS, deviceSummaries, hasWater, nitrogenCheckHint, nStatus, type PlantTwin, type SceneSelection, type TimelineEntry, type sensorScene } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 import type { Plot3DApi } from '@/components/twin/plot-3d'
 import { DeviceHud, NutrientHud } from '@/components/twin/hud-panels'
@@ -57,6 +57,7 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
   const devices = useMemo(() => deviceSummaries(scene.controllers, twin.sensors), [scene.controllers, twin.sensors])
   const bwdMin = twin.reference.bwd_min
   const status = nStatus(bwd, bwdMin)
+  const nHint = useMemo(() => nitrogenCheckHint(twin), [twin])
   const currentSeq = phaseAtDay ? phaseAtDay.seq : twin.now.phase?.seq ?? null
   const isProjection = shownDay > twin.now.date
   const name = twin.plant.name ?? twin.plant.plant_id
@@ -100,7 +101,7 @@ export function TwinStage({ twin, shownDay, age, phaseAtDay, bwd, heightNow, til
 
               <div className="flex flex-col gap-2 lg:pointer-events-auto lg:absolute lg:bottom-3 lg:right-3 lg:top-3 lg:w-60 lg:overflow-y-auto">
                 <PlotCard twin={twin} />
-                <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={twin.nutrients} />
+                <NutrientHud status={status} bwd={bwd} bwdMin={bwdMin} nutrients={twin.nutrients} hint={nHint} />
                 <DeviceHud devices={devices} selected={picked} onSelect={onPick} />
               </div>
             </div>
