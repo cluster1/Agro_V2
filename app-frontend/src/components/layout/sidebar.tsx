@@ -55,6 +55,8 @@ interface NavItem {
   href?: string
   icon: any
   roles: string[]
+  /** hanya aktif pada path yang sama persis (induk dari halaman lain di bawahnya) */
+  exact?: boolean
   children?: NavItem[]
 }
 
@@ -110,9 +112,13 @@ const navigation: NavItem[] = [
   },
   {
     name: 'Report',
-    href: '/reports',
     icon: FileText,
-    roles: ['admin', 'tenant_admin', 'agronom']
+    roles: ['admin', 'tenant_admin', 'agronom'],
+    children: [
+      { name: 'Sensor', href: '/reports', exact: true, icon: LineChart, roles: ['admin', 'tenant_admin', 'agronom'] },
+      { name: 'Produksi', href: '/reports/production', icon: Wheat, roles: ['admin', 'tenant_admin', 'agronom'] },
+      { name: 'Kegiatan & Biaya', href: '/reports/costs', icon: ClipboardCheck, roles: ['admin', 'tenant_admin', 'agronom'] },
+    ]
   },
   {
     name: 'Utility',
@@ -177,8 +183,8 @@ export function Sidebar() {
 
   const productCode = process.env.NEXT_PUBLIC_PRODUCT_CODE
 
-  const isPathActive = (href?: string) =>
-    !!href && (pathname === href || !!pathname?.startsWith(href + '/'))
+  const isPathActive = (href?: string, exact = false) =>
+    !!href && (pathname === href || (!exact && !!pathname?.startsWith(href + '/')))
 
   const handleLinkClick = () => {
     closedByNav.current = true
@@ -190,12 +196,12 @@ export function Sidebar() {
     const hasChildren = item.children && item.children.length > 0
     const isExpanded = expandedMenus[item.name]
     const isActive = isPathActive(item.href)
-    const hasActiveChild = item.children?.some(child => isPathActive(child.href))
+    const hasActiveChild = item.children?.some(child => isPathActive(child.href, child.exact))
     const submenuId = `${prefix}-submenu-${slug(item.name)}`
 
     const childLink = (child: NavItem) => {
       const ChildIcon = child.icon
-      const isChildActive = isPathActive(child.href)
+      const isChildActive = isPathActive(child.href, child.exact)
       return (
         <Link
           key={child.name}
