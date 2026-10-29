@@ -1,7 +1,13 @@
-/** In-memory stand-in for a TypeORM EntityManager, enough for `find`, `findOne` and `update` with equality / In() filters. */
+/** In-memory stand-in for a TypeORM EntityManager, enough for `find`, `findOne` and `update` with equality / In() / Between() filters. */
+const text = (x: unknown) => (x instanceof Date ? x.toISOString() : String(x));
+
 const eq = (row: any, where: Record<string, any>) =>
   Object.entries(where).every(([k, v]) => {
-    if (v && typeof v === 'object' && '_type' in v) return v._type === 'in' ? v._value.includes(row[k]) : true;
+    if (v && typeof v === 'object' && '_type' in v) {
+      if (v._type === 'in') return v._value.includes(row[k]);
+      if (v._type === 'between') return row[k] != null && text(row[k]) >= text(v._value[0]) && text(row[k]) <= text(v._value[1]);
+      return true;
+    }
     return row[k] === v;
   });
 

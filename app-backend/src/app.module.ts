@@ -26,6 +26,7 @@ import { SoilModule } from './soil/soil.module';
 import { ImportsModule } from './imports/imports.module';
 import { ModelModule } from './model/model.module';
 import { WeatherModule } from './weather/weather.module';
+import { ReportingModule } from './reporting/reporting.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { WeatherModule } from './weather/weather.module';
     SoilModule,
     ImportsModule,
     ModelModule,
+    ReportingModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
