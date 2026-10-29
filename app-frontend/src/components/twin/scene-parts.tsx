@@ -16,7 +16,7 @@ const MAX_LEAVES_PER_HILL = 14
 const LEAF_BENDS = [0.55, 0.9, 1.25]
 
 /** Lebar pematang tanah di sekeliling petak; pengendali berdiri di tengahnya. */
-export const BUND = 0.8
+export const BUND = 0.2
 const BUND_H = 0.16
 const SLAB_H = 0.35
 /** Jarak pusat pematang dari tengah petak. */
@@ -255,14 +255,14 @@ export function StationKitModel({ controller, position, selected, onHover, onSel
     >
       {/* dasar: gundukan tanah, balok bata, dudukan baja */}
       <mesh position={[0, 0.03, 0]} receiveShadow>
-        <cylinderGeometry args={[0.4, 0.45, 0.06, 16]} />
+        <cylinderGeometry args={[0.28, 0.32, 0.06, 16]} />
         <meshStandardMaterial color="#5D4037" roughness={1} />
       </mesh>
-      <mesh position={[0.22, 0.11, 0.1]} rotation={[0, 0.4, 0]} castShadow>
+      <mesh position={[0.17, 0.11, 0.08]} rotation={[0, 0.4, 0]} castShadow>
         <boxGeometry args={[0.22, 0.1, 0.14]} />
         <meshStandardMaterial color="#A1887F" roughness={0.95} />
       </mesh>
-      <mesh position={[-0.22, 0.09, 0.05]} rotation={[0, -0.3, 0]} castShadow>
+      <mesh position={[-0.17, 0.09, 0.04]} rotation={[0, -0.3, 0]} castShadow>
         <boxGeometry args={[0.28, 0.06, 0.08]} />
         <meshStandardMaterial color="#263238" roughness={0.6} metalness={0.4} />
       </mesh>

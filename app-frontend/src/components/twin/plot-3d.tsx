@@ -136,8 +136,8 @@ const UP = new THREE.Vector3(0, 1, 0)
 type Controls = React.ElementRef<typeof OrbitControls>
 
 /** Luas cuplikan di layar pada zoom 1 (satuan dunia): lebar diagonal petak + label, dan tinggi miring + tiang Station Kit 2,9 m. */
-const FIT_WIDTH = 12.5
-const FIT_HEIGHT = 10.3
+const FIT_WIDTH = 11.2
+const FIT_HEIGHT = 9.2
 
 /**
  * Zoom awal menyesuaikan ukuran kanvas dan area yang tidak tertutup panel, supaya cuplikan 6 x 6 m dan tiangnya
@@ -234,7 +234,7 @@ export default function Plot3D(props: Plot3DProps) {
       controllers.map((c, i) => ({
         c,
         xz: onBund(
-          (c.lon !== null && c.lat !== null ? mapToPlot(geom, c.lon, c.lat) : null) ?? ([-HALF - 0.4 + i * 0.7, -HALF - 0.4] as [number, number]),
+          (c.lon !== null && c.lat !== null ? mapToPlot(geom, c.lon, c.lat) : null) ?? ([-BUND_CENTER + i * 0.7, -BUND_CENTER] as [number, number]),
         ),
       })),
     [controllers, geom],
