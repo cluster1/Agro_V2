@@ -306,86 +306,120 @@ function ParamRow({ p }: { p: SensorParam }) {
   )
 }
 
-/** Panel Perangkat & sensor di atas model: keterangan lengkap tiap pengendali dan sensornya, juga yang belum punya koordinat. */
-function DeviceHud({ devices, selected, onSelect }: { devices: DeviceSummary[]; selected: SceneSelection | null; onSelect: (s: SceneSelection) => void }) {
+/** Kotak HUD terpisah: judul yang dapat diklik untuk menyorot objek di 3D, dan tombol lipat sendiri. */
+function HudBox({
+  id,
+  icon,
+  title,
+  meta,
+  selected,
+  onSelect,
+  children,
+}: {
+  id: string
+  icon: React.ReactNode
+  title: string
+  meta?: string
+  selected?: boolean
+  onSelect?: () => void
+  children: React.ReactNode
+}) {
   const [open, setOpen] = useState(true)
-  const sensorCount = devices.reduce((n, d) => n + d.sensors.length, 0)
-  const isSel = (kind: SceneSelection['kind'], id: string) => selected?.kind === kind && selected.id === id
+  const head = (
+    <>
+      {icon}
+      <span className="truncate font-medium">{title}</span>
+      {meta && <span className="shrink-0 text-muted-foreground">· {meta}</span>}
+    </>
+  )
   return (
-    <div className="rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls="twin-hud-devices"
-        className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-1.5 font-medium"
-      >
-        <span className="flex items-center gap-1.5">
-          <Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Perangkat &amp; sensor · {devices.length} perangkat, {sensorCount} sensor
-        </span>
-        {open ? <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" /> : <ChevronUp className="h-4 w-4 shrink-0" aria-hidden="true" />}
-      </button>
+    <section aria-label={title} className={`shrink-0 rounded-md border bg-background/90 text-xs shadow backdrop-blur-sm ${selected ? 'border-2 border-amber-500' : ''}`}>
+      <div className="flex items-stretch">
+        {onSelect ? (
+          <button type="button" onClick={onSelect} aria-pressed={selected} className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5 text-left">
+            {head}
+          </button>
+        ) : (
+          <div className="flex min-h-11 min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5">{head}</div>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={id}
+          aria-label={`${open ? 'Lipat' : 'Buka'} ${title}`}
+          className="flex min-h-11 w-11 shrink-0 items-center justify-center"
+        >
+          {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronUp className="h-4 w-4" aria-hidden="true" />}
+        </button>
+      </div>
       {open && (
-        <div id="twin-hud-devices" className="max-h-48 space-y-3 overflow-y-auto border-t px-3 py-2">
-          {devices.length === 0 ? (
-            <p className="text-muted-foreground">Belum ada perangkat di cluster petak ini.</p>
-          ) : (
-            devices.map(({ controller: c, sensors, loose }) => (
-              <section key={c.dev_id} aria-label={`Perangkat ${c.name}`} className="space-y-1">
-                <button
-                  type="button"
-                  onClick={() => onSelect({ kind: 'controller', id: c.dev_id })}
-                  aria-pressed={isSel('controller', c.dev_id)}
-                  className={`flex min-h-11 w-full items-center justify-between gap-2 rounded px-1 text-left font-semibold ${isSel('controller', c.dev_id) ? 'bg-amber-500/20' : ''}`}
-                >
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{c.name}</span>
-                  </span>
-                  <span className="shrink-0 font-normal text-muted-foreground">{c.status === 1 ? 'Aktif' : c.status === null ? '-' : 'Nonaktif'}</span>
-                </button>
-                {c.cameras.length > 0 && <p className="px-1 text-muted-foreground">Kamera: {c.cameras.join(', ')}</p>}
-                {sensors.length === 0 && loose.length === 0 && <p className="px-1 text-muted-foreground">Belum ada sensor pada perangkat ini.</p>}
-                {sensors.map((s) => (
-                  <div key={s.sens_id} className="pl-3">
-                    <button
-                      type="button"
-                      onClick={() => onSelect({ kind: 'sensor', id: s.sens_id })}
-                      aria-pressed={isSel('sensor', s.sens_id)}
-                      className={`flex min-h-11 w-full items-center gap-1.5 rounded px-1 text-left font-medium ${isSel('sensor', s.sens_id) ? 'bg-amber-500/20' : ''}`}
-                    >
-                      <Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      <span className="truncate">{s.name}</span>
-                      {s.type && <span className="shrink-0 font-normal text-muted-foreground">· {s.type}</span>}
-                    </button>
-                    {s.params.length === 0 ? (
-                      <p className="px-1 text-muted-foreground">belum ada parameter terhubung</p>
-                    ) : (
-                      <ul className="space-y-0.5 px-1" aria-label={`Parameter ${s.name}`}>
-                        {s.params.map((p) => (
-                          <ParamRow key={p.ds_id} p={p} />
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-                {loose.length > 0 && (
-                  <div className="pl-3">
-                    <p className="px-1 font-medium">Parameter lain</p>
-                    <ul className="space-y-0.5 px-1" aria-label={`Parameter lain ${c.name}`}>
-                      {loose.map((p) => (
-                        <ParamRow key={p.ds_id} p={p} />
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            ))
-          )}
+        <div id={id} className="space-y-1 border-t px-3 py-2">
+          {children}
         </div>
       )}
-    </div>
+    </section>
+  )
+}
+
+/** Kotak HUD per perangkat dan per sensor di atas model, juga untuk yang belum punya koordinat. */
+function DeviceHud({ devices, selected, onSelect }: { devices: DeviceSummary[]; selected: SceneSelection | null; onSelect: (s: SceneSelection) => void }) {
+  const isSel = (kind: SceneSelection['kind'], id: string) => selected?.kind === kind && selected.id === id
+  if (devices.length === 0) {
+    return (
+      <HudBox id="twin-hud-empty" icon={<Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />} title="Perangkat & sensor">
+        <p className="text-muted-foreground">Belum ada perangkat di cluster petak ini.</p>
+      </HudBox>
+    )
+  }
+  return (
+    <>
+      {devices.map(({ controller: c, sensors, loose }) => (
+        <div key={c.dev_id} className="contents">
+          <HudBox
+            id={`twin-hud-dev-${c.dev_id}`}
+            icon={<Cpu className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+            title={c.name}
+            meta={c.status === 1 ? 'Aktif' : c.status === null ? undefined : 'Nonaktif'}
+            selected={isSel('controller', c.dev_id)}
+            onSelect={() => onSelect({ kind: 'controller', id: c.dev_id })}
+          >
+            <p className="text-muted-foreground">{sensors.length} sensor terhubung</p>
+            {c.cameras.length > 0 && <p className="text-muted-foreground">Kamera: {c.cameras.join(', ')}</p>}
+          </HudBox>
+          {sensors.map((s) => (
+            <HudBox
+              key={s.sens_id}
+              id={`twin-hud-sens-${s.sens_id}`}
+              icon={<Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+              title={s.name}
+              meta={s.type ?? undefined}
+              selected={isSel('sensor', s.sens_id)}
+              onSelect={() => onSelect({ kind: 'sensor', id: s.sens_id })}
+            >
+              {s.params.length === 0 ? (
+                <p className="text-muted-foreground">belum ada parameter terhubung</p>
+              ) : (
+                <ul className="space-y-0.5" aria-label={`Parameter ${s.name}`}>
+                  {s.params.map((p) => (
+                    <ParamRow key={p.ds_id} p={p} />
+                  ))}
+                </ul>
+              )}
+            </HudBox>
+          ))}
+          {loose.length > 0 && (
+            <HudBox id={`twin-hud-loose-${c.dev_id}`} icon={<Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />} title={`Parameter lain · ${c.name}`}>
+              <ul className="space-y-0.5" aria-label={`Parameter lain ${c.name}`}>
+                {loose.map((p) => (
+                  <ParamRow key={p.ds_id} p={p} />
+                ))}
+              </ul>
+            </HudBox>
+          )}
+        </div>
+      ))}
+    </>
   )
 }
 
