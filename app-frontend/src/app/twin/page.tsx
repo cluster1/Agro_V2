@@ -21,11 +21,12 @@ import { useAuthStore } from '@/stores/auth-store'
 import { canRunSimulation } from '@/lib/permissions'
 import { queryKeys } from '@/lib/query-keys'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, sensorScene, type PlantTwin, type SitePlant, type TwinMapData } from '@/lib/twin'
+import { addDays, bwdAt, daysBetween, phaseOnDay, sliderRange, valueAtAge, webglSupported, sensorScene, type PlantTwin, type SceneSelection, type SitePlant, type TwinMapData } from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
+import { DeviceInfo } from '@/components/twin/device-info'
 
 // three.js is heavy and needs the browser: load it only when the 3D view is shown
 const Plot3D = dynamic(() => import('@/components/twin/plot-3d'), {
@@ -51,6 +52,7 @@ export default function TwinPage() {
   const [mode, setMode] = useState<ColorMode>('visual')
   const [follow, setFollow] = useState(true)
   const [mediaId, setMediaId] = useState<string | null>(null)
+  const [picked, setPicked] = useState<SceneSelection | null>(null)
   const [view, setView] = useState<'3d' | '2d'>('3d')
   const [gl, setGl] = useState<boolean | null>(null)
 
@@ -91,6 +93,7 @@ export default function TwinPage() {
     setPlantId(id)
     setDay('')
     setMediaId(null)
+    setPicked(null)
     setFollow(true)
   }
 
@@ -273,6 +276,8 @@ export default function TwinPage() {
                     selectedMediaId={mediaId}
                     controllers={scene.controllers}
                     sensors={scene.sensors}
+                    selected={picked}
+                    onSelectDevice={setPicked}
                     onSelectMedia={onSelectMedia}
                     label={`Model 3D petak ${twin.plant.name ?? twin.plant.plant_id}, tinggi ${Math.round(heightNow)} sentimeter`}
                   />
@@ -292,6 +297,8 @@ export default function TwinPage() {
                     onSelectMedia={onSelectMedia}
                   />
                 )}
+
+                {show3d && <DeviceInfo controllers={scene.controllers} sensors={scene.sensors} selection={picked} onSelect={setPicked} />}
 
                 <TimeSlider
                   start={range.start}

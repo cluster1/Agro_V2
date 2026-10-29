@@ -66,6 +66,17 @@ describe('TwinService.mapData', () => {
     ]);
   });
 
+  it('returns the device and sensor details shown when an object is clicked in the 3D model', async () => {
+    const t = tables();
+    Object.assign(t.get(Device)![0], { dev_location: 'Pematang utara', dev_number_id: 'SK-01', dev_img: 'https://example.test/kit.png', dev_sts: 1 });
+    t.get(Sensor)![1].sens_location = 'Dekat saluran';
+    const data = await setup(t).mapData(undefined, 'T1');
+    expect(data.devices[0]).toMatchObject({ location: 'Pematang utara', number_id: 'SK-01', image: 'https://example.test/kit.png', status: 1 });
+    expect(data.devices[1]).toMatchObject({ location: null, number_id: null, image: null, status: null });
+    expect(data.sensors[1]).toMatchObject({ location: 'Dekat saluran' });
+    expect(data.sensors[0]).toMatchObject({ location: null });
+  });
+
   it('never leaks another tenant', async () => {
     const data = await setup(tables()).mapData(undefined, 'T1');
     const ids = [...data.sites.map((s) => s.site_id), ...data.devices.map((d) => d.dev_id), ...data.sensors.map((s) => s.sens_id)];

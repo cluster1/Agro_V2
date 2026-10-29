@@ -6,7 +6,21 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { N_STATUS, PIN_COLOR, PIN_COLOR_ACTIVE, grainColor, hasWater, leafColor, nStatus, ringOf, type GeoJsonPolygon, type SceneController, type SceneSensor, type TwinMedia } from '@/lib/twin'
+import {
+  N_STATUS,
+  PIN_COLOR,
+  PIN_COLOR_ACTIVE,
+  grainColor,
+  hasWater,
+  leafColor,
+  nStatus,
+  ringOf,
+  type GeoJsonPolygon,
+  type SceneController,
+  type SceneSelection,
+  type SceneSensor,
+  type TwinMedia,
+} from '@/lib/twin'
 import type { ColorMode } from '@/components/twin/plot-map'
 
 export interface Plot3DProps {
@@ -23,9 +37,14 @@ export interface Plot3DProps {
   /** pengendali (kamera menyatu dengannya) dan sensor, diposisikan dari koordinat tabel sensor */
   controllers: SceneController[]
   sensors: SceneSensor[]
+  /** pengendali atau sensor yang diklik; disorot dan infonya ditampilkan di luar kanvas */
+  selected: SceneSelection | null
+  onSelectDevice: (selection: SceneSelection | null) => void
   onSelectMedia: (id: string) => void
   label: string
 }
+
+const HIGHLIGHT = '#FFC107'
 
 /** Cuplikan petak: 6 x 6 m, jajar legowo 2:1 (25 x 12,5 x 50 cm). */
 const HALF = 3
@@ -117,18 +136,51 @@ function Panicles({ hills, heightCm, color }: { hills: [number, number][]; heigh
 }
 
 /** Pengendali (Station Kit): tiang dan kotak kontrol; kamera yang tersimpan bersamanya dipasang di tiang yang sama. */
-function StationKit({ controller, position, onHover }: { controller: SceneController; position: [number, number]; onHover: (label: string | null) => void }) {
-  const label = `Station Kit ${controller.name}${controller.cameras.length ? ` · kamera: ${controller.cameras.join(', ')}` : ''}`
+function StationKit({
+  controller,
+  position,
+  selected,
+  onHover,
+  onSelect,
+}: {
+  controller: SceneController
+  position: [number, number]
+  selected: boolean
+  onHover: (label: string | null, clickable?: boolean) => void
+  onSelect: () => void
+}) {
+  const label = `Station Kit ${controller.name}${controller.cameras.length ? ` · kamera: ${controller.cameras.join(', ')}` : ''} (klik untuk info)`
   return (
-    <group position={[position[0], 0, position[1]]} onPointerOver={() => onHover(label)} onPointerOut={() => onHover(null)}>
+    <group
+      position={[position[0], 0, position[1]]}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect()
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        onHover(label, true)
+      }}
+      onPointerOut={() => onHover(null)}
+    >
       <mesh position={[0, 1, 0]}>
         <cylinderGeometry args={[0.03, 0.03, 2, 8]} />
-        <meshStandardMaterial color="#616161" />
+        <meshStandardMaterial color="#616161" emissive={selected ? HIGHLIGHT : '#000000'} emissiveIntensity={selected ? 0.7 : 0} />
+      </mesh>
+      {/* area klik lebih lebar dari tiang yang tipis */}
+      <mesh position={[0, 1, 0]} visible={false}>
+        <cylinderGeometry args={[0.25, 0.25, 2.2, 8]} />
       </mesh>
       <mesh position={[0, 1.9, 0]}>
         <boxGeometry args={[0.35, 0.25, 0.2]} />
-        <meshStandardMaterial color="#1565C0" />
+        <meshStandardMaterial color="#1565C0" emissive={selected ? HIGHLIGHT : '#000000'} emissiveIntensity={selected ? 0.7 : 0} />
       </mesh>
+      {selected && (
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.3, 0.38, 24]} />
+          <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
+        </mesh>
+      )}
       {controller.cameras.length > 0 && (
         <mesh position={[0.1, 2.13, 0.1]}>
           <boxGeometry args={[0.22, 0.14, 0.26]} />
@@ -161,8 +213,10 @@ const SAMPLES = Array.from({ length: 20 }, (_, i): [number, number] => {
 
 /** Model 3D cuplikan petak: rumpun jajar legowo, air sawah, pengendali (dengan kamera), sensor, titik sampel, pin foto. */
 export default function Plot3D(props: Plot3DProps) {
-  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, onSelectMedia, label } = props
-  const [hover, setHover] = useState<string | null>(null)
+  const { heightCm, tillers, bwd, bwdMin, mode, phaseSeq, geom, media, selectedMediaId, controllers, sensors, selected, onSelectDevice, onSelectMedia, label } = props
+  const [hoverState, setHoverState] = useState<{ label: string; clickable: boolean } | null>(null)
+  const hover = hoverState?.label ?? null
+  const setHover = (label: string | null, clickable = false) => setHoverState(label ? { label, clickable } : null)
   const controls = useRef<React.ElementRef<typeof OrbitControls>>(null)
 
   const status = nStatus(bwd, bwdMin)
@@ -194,8 +248,11 @@ export default function Plot3D(props: Plot3DProps) {
 
   return (
     <figure className="space-y-2">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border bg-gradient-to-b from-sky-100 to-sky-50 dark:from-slate-800 dark:to-slate-900">
+      <div
+        className={`relative aspect-[4/3] w-full overflow-hidden rounded-lg border bg-gradient-to-b from-sky-100 to-sky-50 dark:from-slate-800 dark:to-slate-900 ${hoverState?.clickable ? 'cursor-pointer' : ''}`}
+      >
         <Canvas
+          onPointerMissed={() => onSelectDevice(null)}
           dpr={[1, 2]}
           camera={{ position: [5.5, 4.2, 6.5], fov: 45, near: 0.1, far: 80 }}
           role="img"
@@ -221,20 +278,49 @@ export default function Plot3D(props: Plot3DProps) {
           {flowering && <Panicles hills={HILLS} heightCm={heightCm} color={grainColor(phaseSeq)} />}
 
           {kits.map(({ c, xz }) => (
-            <StationKit key={c.dev_id} controller={c} position={xz} onHover={setHover} />
+            <StationKit
+              key={c.dev_id}
+              controller={c}
+              position={xz}
+              selected={selected?.kind === 'controller' && selected.id === c.dev_id}
+              onHover={setHover}
+              onSelect={() => onSelectDevice({ kind: 'controller', id: c.dev_id })}
+            />
           ))}
 
-          {sensorSpots.map(({ s, xz }) => (
-            <mesh
-              key={s.sens_id}
-              position={[xz[0], 0.12, xz[1]]}
-              onPointerOver={() => setHover(`Sensor ${s.name}${s.info ? ` — ${s.info}` : ''}`)}
-              onPointerOut={() => setHover(null)}
-            >
-              <cylinderGeometry args={[0.07, 0.07, 0.24, 12]} />
-              <meshStandardMaterial color="#8E24AA" />
-            </mesh>
-          ))}
+          {sensorSpots.map(({ s, xz }) => {
+            const active = selected?.kind === 'sensor' && selected.id === s.sens_id
+            return (
+              <group
+                key={s.sens_id}
+                position={[xz[0], 0, xz[1]]}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelectDevice({ kind: 'sensor', id: s.sens_id })
+                }}
+                onPointerOver={(e) => {
+                  e.stopPropagation()
+                  setHover(`Sensor ${s.name}${s.info ? ` — ${s.info}` : ''} (klik untuk info)`, true)
+                }}
+                onPointerOut={() => setHover(null)}
+              >
+                <mesh position={[0, 0.12, 0]}>
+                  <cylinderGeometry args={[0.07, 0.07, 0.24, 12]} />
+                  <meshStandardMaterial color="#8E24AA" emissive={active ? HIGHLIGHT : '#000000'} emissiveIntensity={active ? 0.7 : 0} />
+                </mesh>
+                {/* area klik lebih besar dari silinder kecil */}
+                <mesh position={[0, 0.15, 0]} visible={false}>
+                  <sphereGeometry args={[0.25, 8, 8]} />
+                </mesh>
+                {active && (
+                  <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[0.14, 0.2, 24]} />
+                    <meshBasicMaterial color={HIGHLIGHT} side={THREE.DoubleSide} />
+                  </mesh>
+                )}
+              </group>
+            )
+          })}
 
           {SAMPLES.map(([x, z], i) => (
             <mesh key={i} position={[x, 0.06, z]} onPointerOver={() => setHover(`Titik sampel BWD ${i + 1}`)} onPointerOut={() => setHover(null)}>

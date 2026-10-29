@@ -274,8 +274,20 @@ export class TwinService {
         cluster_id: d.cluster_id ?? null,
         lat: num(d.dev_lat),
         lon: num(d.dev_lon),
+        location: d.dev_location ?? null,
+        number_id: d.dev_number_id ?? null,
+        image: d.dev_img ?? null,
+        status: d.dev_sts ?? null,
       })),
-      sensors: sensors.map((s) => ({ sens_id: s.sens_id, dev_id: s.dev_id, name: s.sens_name, type: s.sens_type ?? null, lat: num(s.sens_lat), lon: num(s.sens_lon) })),
+      sensors: sensors.map((s) => ({
+        sens_id: s.sens_id,
+        dev_id: s.dev_id,
+        name: s.sens_name,
+        type: s.sens_type ?? null,
+        location: s.sens_location ?? null,
+        lat: num(s.sens_lat),
+        lon: num(s.sens_lon),
+      })),
     };
   }
 

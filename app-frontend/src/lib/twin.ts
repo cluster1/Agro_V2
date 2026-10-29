@@ -110,7 +110,19 @@ export interface PlantTwin {
   } | null
   scenarios: { scenario: string; harvest_date: string | null; yield: number | null }[]
   recommendation: { sched_id: string; title: string; start: string | null; description: string | null; plan_value: string | null } | null
-  sensors: { ds_id: string; dev_id: string; sens_id: string | null; name: string; kt_id: string | null; value: number | null; read_at: string | null; warn_min: number | null; warn_max: number | null }[]
+  sensors: {
+    ds_id: string
+    dev_id: string
+    sens_id: string | null
+    name: string
+    kt_id: string | null
+    value: number | null
+    read_at: string | null
+    warn_min: number | null
+    warn_max: number | null
+    norm_min?: number | null
+    norm_max?: number | null
+  }[]
   weather: { latest: WeatherDay | null; forecast: WeatherDay[] }
   media: TwinMedia[]
 }
@@ -128,24 +140,51 @@ export function parametersBySensor(params: SensorParam[]): Map<string, SensorPar
 
 export const paramLine = (p: SensorParam): string => `${p.name}: ${p.value === null ? 'belum ada data' : formatNumber(p.value)}`
 
+/** Status satu parameter terhadap batas peringatan: di bawah, di atas, normal, atau belum ada data / batas. */
+export type ParamState = 'low' | 'high' | 'ok' | 'none'
+
+export function paramState(p: Pick<SensorParam, 'value' | 'warn_min' | 'warn_max'>): ParamState {
+  if (p.value === null) return 'none'
+  if (p.warn_min !== null && p.value < p.warn_min) return 'low'
+  if (p.warn_max !== null && p.value > p.warn_max) return 'high'
+  return p.warn_min === null && p.warn_max === null ? 'none' : 'ok'
+}
+
 export interface SceneController {
   dev_id: string
   name: string
   lat: number | null
   lon: number | null
+  location: string | null
+  number_id: string | null
+  /** gambar perangkat; hanya dipakai bila berupa URL http(s) */
+  image: string | null
+  status: number | null
   /** kamera disimpan bersama pengendali, digambar menyatu dengannya */
   cameras: string[]
+  /** sensor (bukan kamera) milik pengendali ini */
+  sensors: { sens_id: string; name: string; type: string | null }[]
 }
 
 export interface SceneSensor {
   sens_id: string
   dev_id: string
+  /** nama pengendali induk */
+  dev_name: string
   name: string
   type: string | null
+  location: string | null
   lat: number
   lon: number
   /** nilai parameter sebagai keterangan */
   info: string
+  params: SensorParam[]
+}
+
+/** Objek 3D yang sedang dipilih (diklik) untuk ditampilkan infonya. */
+export interface SceneSelection {
+  kind: 'controller' | 'sensor'
+  id: string
 }
 
 /**
@@ -163,7 +202,12 @@ export function sensorScene(map: TwinMapData | undefined, clusterId: string | nu
     name: d.name ?? d.dev_id,
     lat: d.lat,
     lon: d.lon,
+    location: d.location ?? null,
+    number_id: d.number_id ?? null,
+    image: d.image ?? null,
+    status: d.status ?? null,
     cameras: sensors.filter((s) => s.dev_id === d.dev_id && isCamera(s.type)).map((s) => s.name ?? s.sens_id),
+    sensors: sensors.filter((s) => s.dev_id === d.dev_id && !isCamera(s.type)).map((s) => ({ sens_id: s.sens_id, name: s.name ?? s.sens_id, type: s.type })),
   }))
 
   const placed = sensors
@@ -176,11 +220,14 @@ export function sensorScene(map: TwinMapData | undefined, clusterId: string | nu
         {
           sens_id: s.sens_id,
           dev_id: s.dev_id,
+          dev_name: dev?.name ?? s.dev_id,
           name: s.name ?? s.sens_id,
           type: s.type,
+          location: s.location ?? null,
           lat: coord.lat,
           lon: coord.lon,
           info: (bySens.get(s.sens_id) ?? []).map(paramLine).join(', '),
+          params: bySens.get(s.sens_id) ?? [],
         },
       ]
     })
@@ -375,8 +422,19 @@ export function samplePoints(ring: [number, number][], count = 20): [number, num
 
 export interface TwinMapData {
   sites: { site_id: string; name: string | null; lat: number | null; lon: number | null }[]
-  devices: { dev_id: string; name: string | null; site_id: string; cluster_id: string | null; lat: number | null; lon: number | null }[]
-  sensors: { sens_id: string; dev_id: string; name: string | null; type: string | null; lat: number | null; lon: number | null }[]
+  devices: {
+    dev_id: string
+    name: string | null
+    site_id: string
+    cluster_id: string | null
+    lat: number | null
+    lon: number | null
+    location?: string | null
+    number_id?: string | null
+    image?: string | null
+    status?: number | null
+  }[]
+  sensors: { sens_id: string; dev_id: string; name: string | null; type: string | null; lat: number | null; lon: number | null; location?: string | null }[]
 }
 
 export const ringOf = (geom: GeoJsonPolygon | null | undefined): number[][] | null =>
