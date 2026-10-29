@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { WeatherCard } from '@/components/dashboard/WeatherCard'
 import { SensorSummary } from '@/components/dashboard/SensorSummary'
+import { FarmOverview } from '@/components/dashboard/farm-overview'
 
 // Dynamic import for EnhancedSitesMap to avoid SSR issues with Leaflet
 const EnhancedSitesMap = dynamic(
@@ -238,6 +239,7 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <>
+              {activeTenantId && <FarmOverview tenantId={activeTenantId} />}
               {/* Single column below lg; 3 columns: Map | Weather+Summary | Timeline */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Column 1: Map */}

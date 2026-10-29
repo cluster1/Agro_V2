@@ -143,3 +143,6 @@ export function canViewAccuracy(user: User | null): boolean {
   if (!user) return false
   return ['admin', 'tenant_admin', 'agronom'].includes(user.user_role)
 }
+
+/** Laporan produksi, kegiatan & biaya: peran yang sama dengan akurasi model. */
+export const canViewReports = canViewAccuracy
