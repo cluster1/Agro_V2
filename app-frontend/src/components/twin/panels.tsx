@@ -265,22 +265,7 @@ export function YieldPanel({ twin }: { twin: PlantTwin }) {
           </>
         )}
 
-        {twin.scenarios.length > 0 && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Skenario cuaca</p>
-            <ul className="space-y-1 text-sm tabular-nums">
-              {twin.scenarios.map((s) => (
-                <li key={s.scenario} className="flex justify-between gap-3 rounded border px-3 py-1.5">
-                  <span>{s.scenario === 'KERING' ? 'Kering' : s.scenario === 'BASAH' ? 'Basah' : s.scenario}</span>
-                  <span>
-                    panen {s.harvest_date ? formatDateTime(s.harvest_date, 'dd MMM') : '-'}
-                    {s.yield !== null ? ` · ${formatNumber(s.yield)} t/ha` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* perbandingan skenario cuaca (twin.scenarios) disembunyikan sampai data iklim normal tersedia */}
       </CardContent>
     </Card>
   )

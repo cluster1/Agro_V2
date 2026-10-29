@@ -39,12 +39,6 @@ const PlotMap = dynamic(() => import('@/components/twin/plot-map').then((m) => m
   loading: () => <div className="h-[420px] w-full rounded-lg bg-muted motion-safe:animate-pulse" role="status" aria-label="Memuat peta" />,
 })
 
-const SCENARIOS = [
-  { value: 'BASE', label: 'Dasar' },
-  { value: 'KERING', label: 'Kering' },
-  { value: 'BASAH', label: 'Basah' },
-]
-
 export default function TwinPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
@@ -57,7 +51,6 @@ export default function TwinPage() {
   const [mode, setMode] = useState<ColorMode>('visual')
   const [follow, setFollow] = useState(true)
   const [mediaId, setMediaId] = useState<string | null>(null)
-  const [scenario, setScenario] = useState('BASE')
   const [view, setView] = useState<'3d' | '2d'>('3d')
   const [gl, setGl] = useState<boolean | null>(null)
 
@@ -102,7 +95,8 @@ export default function TwinPage() {
   }
 
   const simulate = useMutation({
-    mutationFn: async () => (await api.post(`/plants/${plantId}/simulate`, { scenario })).data,
+    // skenario cuaca (KERING/BASAH) disembunyikan: data iklim normal belum tersedia
+    mutationFn: async () => (await api.post(`/plants/${plantId}/simulate`, { scenario: 'BASE' })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['twin'] })
       queryClient.invalidateQueries({ queryKey: ['schedules'] })
@@ -153,23 +147,6 @@ export default function TwinPage() {
           </div>
           {canRun && plantId && (
             <div className="flex flex-wrap items-end gap-2">
-              <div className="space-y-1">
-                <Label htmlFor="twin-scenario" className="text-xs">
-                  Skenario cuaca
-                </Label>
-                <Select value={scenario} onValueChange={setScenario}>
-                  <SelectTrigger id="twin-scenario" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SCENARIOS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <Button onClick={() => simulate.mutate()} disabled={simulate.isPending}>
                 {simulate.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
