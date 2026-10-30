@@ -8,6 +8,7 @@ import { refreshAccessToken } from '@/lib/api'
 import { LoadingState } from '@/components/ui/loading-state'
 import { Sidebar } from './sidebar'
 import { TopBar } from './top-bar'
+import { ChatPanel } from '@/components/chat/chat-panel'
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -86,6 +87,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-screen-2xl">{children}</div>
         </main>
       </div>
+      <ChatPanel />
     </div>
   )
 }

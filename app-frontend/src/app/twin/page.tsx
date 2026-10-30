@@ -27,6 +27,7 @@ import { TimeSlider } from '@/components/twin/time-slider'
 import { GrowthPanel, NutrientPanel, YieldPanel } from '@/components/twin/panels'
 import { GroundTruth } from '@/components/twin/ground-truth'
 import { TwinStage } from '@/components/twin/twin-stage'
+import { useChatStore } from '@/stores/chat-store'
 
 // Leaflet needs the browser (window): never render it on the server
 const PlotMap = dynamic(() => import('@/components/twin/plot-map').then((m) => m.PlotMap), {
@@ -53,6 +54,13 @@ export default function TwinPage() {
   useEffect(() => {
     setGl(webglSupported())
   }, [])
+
+  // beri tahu asisten chat petak mana yang sedang dilihat, supaya "petak ini" bisa dijawab
+  const setChatPlant = useChatStore((s) => s.setPlantId)
+  useEffect(() => {
+    setChatPlant(plantId)
+    return () => setChatPlant(null)
+  }, [plantId, setChatPlant])
 
   const sitePlants = useQuery({
     queryKey: queryKeys.twin(activeTenantId),

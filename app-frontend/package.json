@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "test:chatbot": "node --test \"src/lib/chatbot/*.test.ts\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
