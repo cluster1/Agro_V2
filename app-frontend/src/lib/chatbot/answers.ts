@@ -353,7 +353,7 @@ function glossaryReply(match: Extract<MatchResult, { kind: 'intent' }>): Reply {
 }
 
 const HELP = [
-  'Saya asisten data petak. Saya menjawab dari data yang ada di aplikasi ini, tanpa mengarang angka. Contoh yang bisa ditanyakan:',
+  'Saya Agro Asisten. Saya menjawab dari data yang ada di aplikasi ini, tanpa mengarang angka. Contoh yang bisa ditanyakan:',
   '• Perkiraan hasil panen dan cara menghitungnya\n• Kecukupan hara, warna daun (BWD), dan rekomendasi pupuk\n• Tahap tumbuh dan perkiraan panen, pertumbuhan tanaman\n• Jadwal kegiatan, alert, sensor, dan cuaca\n• Ringkasan kebun\n• Arti istilah seperti BWD, GDD, GKG\n• Menghitung ulang perkiraan (dengan konfirmasi)',
 ]
 

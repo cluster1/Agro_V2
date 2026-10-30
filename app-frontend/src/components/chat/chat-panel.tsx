@@ -35,7 +35,7 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString
 const MAX_INPUT = 300
 
 /**
- * Asisten data petak tanpa LLM: pertanyaan dicocokkan ke maksud (lib/chatbot), data diambil dari endpoint yang
+ * Agro Asisten, asisten data petak tanpa LLM: pertanyaan dicocokkan ke maksud (lib/chatbot), data diambil dari endpoint yang
  * sudah menyaring tenant dan role, dan jawaban dirangkai dari data itu. Simulasi hanya jalan setelah konfirmasi.
  */
 export function ChatPanel() {
@@ -171,7 +171,7 @@ export function ChatPanel() {
         type="button"
         size="icon"
         className="fixed bottom-4 right-4 z-drawer h-12 w-12 rounded-full shadow-lg coarse:h-12 coarse:w-12"
-        aria-label={open ? 'Tutup asisten data petak' : 'Buka asisten data petak'}
+        aria-label={open ? 'Tutup Agro Asisten' : 'Buka Agro Asisten'}
         aria-expanded={open}
         aria-controls="chat-panel"
         onClick={() => (open ? close() : setOpen(true))}
@@ -183,7 +183,7 @@ export function ChatPanel() {
         <section
           id="chat-panel"
           role="dialog"
-          aria-label="Asisten data petak"
+          aria-label="Agro Asisten"
           className="fixed bottom-20 right-4 z-drawer flex h-[min(34rem,calc(100dvh-7rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border bg-background shadow-xl"
           onKeyDown={(e) => {
             if (e.key === 'Escape') close()
@@ -191,7 +191,7 @@ export function ChatPanel() {
         >
           <header className="flex items-center justify-between gap-2 border-b bg-muted/50 px-3 py-2">
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold">Asisten data petak</h2>
+              <h2 className="truncate text-sm font-semibold">Agro Asisten</h2>
               <p className="text-xs text-muted-foreground">Menjawab dari data aplikasi</p>
             </div>
             <div className="flex shrink-0 gap-1">

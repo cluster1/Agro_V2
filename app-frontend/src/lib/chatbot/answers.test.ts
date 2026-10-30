@@ -294,7 +294,7 @@ describe('percakapan umum', () => {
   it('salam, terima kasih, bantuan', () => {
     assert.match(textOf(ask('halo')), /Halo/)
     assert.equal(textOf(ask('terima kasih')), 'Sama-sama.')
-    assert.match(textOf(ask('bantuan')), /asisten data petak/)
+    assert.match(textOf(ask('bantuan')), /Agro Asisten/)
   })
 
   it('tidak dikenal memberi saran, ambigu memberi dua pilihan', () => {
